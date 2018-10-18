@@ -14,6 +14,7 @@ void set_dir (int x, int y, cardd dir)
 	if (x > 2 || y > 2)
 	{
 		printf("Eingabe ungueltig!");
+		//TODO: Überläufe prüfen.
 	} else {
 		map[x][y] = dir;
 	}
