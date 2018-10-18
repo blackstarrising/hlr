@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 // Definieren Sie ein enum cardd
-enum cardd {N, E, S, W};
+enum cardd {N, E, S, W} cardd;
 
 // Definieren Sie ein 3x3-Array namens map, das Werte vom Typ cardd enthält
 enum cardd map[3][3];
