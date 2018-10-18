@@ -4,7 +4,7 @@
 enum cardd {N, E, S, W};
 
 // Definieren Sie ein 3x3-Array namens map, das Werte vom Typ cardd enthält
-cardd map[3][3];
+enum cardd map[3][3];
 
 // Die Funktion set_dir soll an Position x, y den Wert dir in das Array map eintragen
 // Überprüfen Sie x und y um mögliche Arrayüberläufe zu verhindern
