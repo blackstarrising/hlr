@@ -1,31 +1,52 @@
 #include <stdio.h>
 
 // Definieren Sie ein enum cardd
-enum cardd {N, E, S, W} cardd;
+typedef enum cardd {N = 1, E = 2, S = 4, W = 7} cardd; // enum bekommt Werte deren Werte selbst, als auch die tupel-Summen weiterhin eine bijektive Abbildung auf N sind
 
 // Definieren Sie ein 3x3-Array namens map, das Werte vom Typ cardd enthält
-enum cardd map[3][3];
+static cardd map[3][3];
 
 // Die Funktion set_dir soll an Position x, y den Wert dir in das Array map eintragen
 // Überprüfen Sie x und y um mögliche Arrayüberläufe zu verhindern
 // Überprüfen Sie außerdem dir auf Gültigkeit
 void set_dir (int x, int y, cardd dir)
 {
-	if (x > 2 || y > 2)
+	// Prüfen ob Indizes korrekt
+	if (x > 2 || y > 2 || x < 0 || y < 0)
 	{
-		printf("Eingabe ungueltig!");
-		//TODO: Überläufe prüfen.
-	} else {
-		map[x][y] = dir;
+		//printf('Eingabe ungueltig!');
+		return;
 	}
+	// Prüfen ob cardd korrekt
+	if (!(dir == N || dir == E || dir == S || dir == W || dir == N + E || dir == N + W || dir == S + W || dir == S + E))
+	{
+		//printf("Eingabe ungueltig!");
+		return;
+	}
+	// Setzen von dir in map.
+	map[x][y] = dir;
 }
 
 // Die Funktion show_map soll das Array in Form einer 3x3-Matrix ausgeben
 void show_map (void)
 {
-	for(int i = 0; i <= 2; i++)
+	for(int y = 0; y <= 2; y++)
 	{
-		printf("%c\t%c\t%c\n", map[0][i], map[1][i], map[2][i]);
+		for(int x = 0; x <= 2; x++)
+		{
+				switch (map[x][y]) {
+					case N: printf('%-5c', 'N'); break;
+					case E: printf('%-5c', 'E'); break;
+					case S: printf('%-5c', 'S'); break;
+					case W: printf('%-5c', 'W'); break;
+					case N+E: printf('%-1c%-4c', 'N' ,'E'); break;
+					case N+W: printf('%-1c%-4c', 'N', 'W'); break;
+					case S+E: printf('%-1c%-4c','S', 'E'); break;
+					case S+W: printf('%-1c%-4c','S', 'W'); break;
+					default: printf('%-5c', '0'); break;
+				}
+		}
+		printf('\n');
 	}
 }
 
