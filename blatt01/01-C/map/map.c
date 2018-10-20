@@ -35,18 +35,18 @@ void show_map (void)
 		for(int x = 0; x <= 2; x++)
 		{
 				switch (map[x][y]) {
-					case N: printf('%-5c', 'N'); break;
-					case E: printf('%-5c', 'E'); break;
-					case S: printf('%-5c', 'S'); break;
-					case W: printf('%-5c', 'W'); break;
-					case N+E: printf('%-1c%-4c', 'N' ,'E'); break;
-					case N+W: printf('%-1c%-4c', 'N', 'W'); break;
-					case S+E: printf('%-1c%-4c','S', 'E'); break;
-					case S+W: printf('%-1c%-4c','S', 'W'); break;
-					default: printf('%-5c', '0'); break;
+					case N: printf("%-5c", 'N'); break;
+					case E: printf("%-5c", 'E'); break;
+					case S: printf("%-5c", 'S'); break;
+					case W: printf("%-5c", 'W'); break;
+					case N+E: printf("%-1c%-4c", 'N' ,'E'); break;
+					case N+W: printf("%-1c%-4c", 'N', 'W'); break;
+					case S+E: printf("%-1c%-4c",'S', 'E'); break;
+					case S+W: printf("%-1c%-4c",'S', 'W'); break;
+					default: printf("%-5c", '0'); break;
 				}
 		}
-		printf('\n');
+		printf("\n");
 	}
 }
 
