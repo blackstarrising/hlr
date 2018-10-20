@@ -30,9 +30,9 @@ void set_dir (int x, int y, cardd dir)
 // Die Funktion show_map soll das Array in Form einer 3x3-Matrix ausgeben
 void show_map (void)
 {
-	for(int y = 0; y <= 2; y++)
+	for(int x = 0; x <= 2; x++)
 	{
-		for(int x = 0; x <= 2; x++)
+		for(int y = 0; y <= 2; y++)
 		{
 				switch (map[x][y]) {
 					case N: printf("%-5c", 'N'); break;
