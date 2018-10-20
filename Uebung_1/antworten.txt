@@ -1,0 +1,11 @@
+Aufgabe 1: Cluster-Kennung
+
+Frage 1:
+Der Grund, weshalb man sich mit "cd" den Pfad eines Programms nicht anzeigen kann ist, dass der Befehl "cd" dafür gedacht ist, das Verzeichnis zu wechseln. Mit "which" kann man jedoch die Pfade bzw. Dateien erhalten, die in der aktuellen Umgebung ausgeführt werden würden, wenn man das Programm im Argument direkt verwendet hätte (ohne "which" davor).
+
+Frage 2:
+Bezüglich der Größe der drei Dateien bzw. Verzeichnisse fällt uns auf, dass die Datei "zufall" 256KB groß ist, das Archiv etwas größer mit 260KB und die Gesamtgröße des Verzeichnisses "/archiv" 271KB beträgt. Dies liegt vermutlich daran, dass zusätzlicher Speicher für die Verzeichnisstruktur benötigt wird, während das tar-archiv diese etwas effizienter abspeichert.
+Nach der Verwendung von gzip ist das tar-archiv sogar nur noch 257KB groß.
+
+Frage 3:
+Ja das wäre möglich. Der Befehl lautet: tar -czf archiv.tar.gz archiv
