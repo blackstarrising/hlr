@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 // Definieren Sie ein enum cardd
-typedef enum cardd {N = 1, E = 2, S = 4, W = 7} cardd; // enum bekommt Werte deren Werte selbst, als auch die tupel-Summen weiterhin eine bijektive Abbildung auf N sind
+typedef enum cardd {N = 1, E = 2, S = 4, W = 8} cardd; // enum bekommt Werte deren Werte selbst, als auch die tupel-Summen weiterhin eine bijektive Abbildung auf N sind
 
 // Definieren Sie ein 3x3-Array namens map, das Werte vom Typ cardd enthält
 static cardd map[3][3];
