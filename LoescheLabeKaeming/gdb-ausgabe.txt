@@ -1,0 +1,54 @@
+Breakpoint 1 at 0x400636: file simple.c, line 12.
+Starting program: /home/labe/hlr/blatt02/simple/simple 
+
+Breakpoint 1, mistake1 () at simple.c:12
+
+###Print Buf: Buf ist ein array mit ints
+12	  int buf[] = { 1, 1, 2, 3, 4, 5 };
+$1 = {0, 0, 0, 0, 791621423, 791621423}
+###Print Buf[2]: Buf[2] ist ein int
+$2 = 0
+
+###Nun nach der Zuweisung: buf ist jetzt das sinnvoll gefüllte array, buf[2] ist also 2
+13	  return buf;
+$3 = {1, 1, 2, 3, 4, 5}
+$4 = 2
+
+
+Breakpoint 2 at 0x40066f: file simple.c, line 19.
+Continuing.
+
+Breakpoint 2, mistake2 () at simple.c:19
+19	  int *buf = malloc (sizeof (char) * 4);
+$5 = (int *) 0x4007fd <__libc_csu_init+77>
+### Buf enthält hier einen pointer auf ein int array	
+Continuing.
+
+
+###Weiter bis zum Error und die gewünschten ausgaben:
+Program received signal SIGSEGV, Segmentation fault.
+0x00000000004006a8 in mistake3 () at simple.c:30
+30	  buf[0] = 3;
+25	mistake3 ()
+26	{
+27	  /* In dieser Funktion darf kein Speicher direkt allokiert werden. */
+28	  int mistake2_ = 0;
+29	  int *buf = (int *) &mistake2;
+30	  buf[0] = 3;
+31	  return buf;
+32	}
+33	
+34	int *
+#0  0x00000000004006a8 in mistake3 () at simple.c:30
+#1  0x0000000000400720 in main () at simple.c:47
+#1  0x0000000000400720 in main () at simple.c:47
+47	  int *p[4] = { &mistake1 ()[1], &mistake2 ()[1], mistake3 (), mistake4 () };
+$6 = {0x4, 0x601014, 0x7fffffffc820, 0x0}
+$7 = {int *()} 0x4006b4 <mistake4>
+Continuing.
+
+Program terminated with signal SIGSEGV, Segmentation fault.
+The program no longer exists.
+
+####Nun noch die Ausgabe von funktion mistake4 durch print mistake4():
+$1 = (int *) 0x601010
