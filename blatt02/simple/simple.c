@@ -37,6 +37,7 @@ mistake4 ()
   int *buf = malloc (sizeof (char) * 4);
   buf[0] = 4;
   return buf;
+  
 }
 
 int
@@ -54,8 +55,8 @@ main (void)
   /* Fügen sie hier die korrekten aufrufe von free() ein */
   //free (p[1]);
   /* welcher Pointer war das doch gleich?, TODO: Fixme... :-) */
-  //free (p[2]);
-  //free (p[3]);
+  free (p[2]);
+  free (p[3]);
   
   return 0;
 }
