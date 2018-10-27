@@ -57,6 +57,5 @@ main (void)
   /* welcher Pointer war das doch gleich?, TODO: Fixme... :-) */
   free (p[2]);
   free (p[3]);
-  
   return 0;
 }
