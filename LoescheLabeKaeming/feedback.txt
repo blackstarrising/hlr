@@ -1,14 +1,17 @@
-﻿Die Bearbeitungszeit bitte in ganzen Stunden angeben (aufrunden).
+Die Bearbeitungszeit bitte in ganzen Stunden angeben (aufrunden).
 In den restlichen Zeilen jeweils ein X in der zutreffenden Spalte setzen.
 
-Bearbeitungszeit:  2
-Schwierigkeit:     [ ] zu leicht         [x] genau richtig     [ ] zu schwer
+Bearbeitungszeit: 14h 
+Schwierigkeit:     [ ] zu leicht         [ ] genau richtig     [x] zu schwer
 Lehrreich:         [ ] wenig             [x] etwas             [ ] sehr
-Verständlichkeit:  [ ] großteils unklar  [ ] teilweise unklar  [x] verständlich
+Verständlichkeit:  [x] großteils unklar  [ ] teilweise unklar  [ ] verständlich
 
 Kommentar:
 Zeitaufwand zu groß? Wo sind Sie nicht weiter gekommen?
+     Wir hingen sehr lange an der Korrektur von simple.c.
 Was war zu schwer oder unverständlich?
+     Ohne C-Vorkenntnisse ist es sehr schwer zu verstehen, was die einzelnen Funktionen mistake tun sollen. Hier fehlt eine eindeutige Kommentierung was genau das Programm denn tut! Das einfache debuggen wird so durch das Rätseln was überhaupt gefragr ist, wie viel man ändern kann etc deutlich erschwert bzw verlangsamt.
 Was könnten wir verbessern?
-Wir hatten zwar keine Probleme beim Verbinden mit dem Cluster oder dem Verständnis der Aufgaben, glauben aber, dass Studierende die vorher nicht mit Linux oder C gearbeitet haben großer Probleme haben könnten. In der Übung hätte der Übungsgruppenleiter kurz ein paar grundlegende Dinge zu ssh und C erzählen können.
+     Eine Erklärung von dem Grundprinzip von Speicherallokation etc in C wäre gut, aber das kann man sich zur Not auch selber anlesen. Essentiell ist aber eine ordentliche Kommentierung des zu korrigierenden codes, damit man keinen Code debuggt ohne zu wissen was er denn tun soll (die Angabe der Ausgabe reicht hier niht, die kann ich auch sehr einfach auf einem ganz anderen Weg erreicht).
 Was hat Ihnen besonders gut gefallen?
+     Die prinzipielle Idee und das Erlernen des Programmes GDB zum debugging ist sehr gut, da gerade das debugging eine sehr wichtige Fähigkeit ist.
