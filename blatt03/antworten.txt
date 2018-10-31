@@ -14,8 +14,39 @@ Antwort: Das System, welches auf dem Cluster läuft heißt "Slurm".
 
 5. Machen Sie sich mit der Manpage von sbatch. Beschreiben Sie die Funktionsweise des Kommandos.
 Antwort: "sbatch" wird verwendet, um Slurm ein batch script zu übergeben, das ausgeführt werden soll. Dabei kann der Dateiname des Scripts direkt übergeben werden. Im Script kann man auch noch weitere Optionen mithilfe von "#SBATCH" festlegen.
-Nachdem das Script vollständig an Slurm übermittelt wurde, wird ihm eine job ID zugeteilt und sbatch wird beendet. Weiterhin kann man dem Kommando noch viele Optionen anstellen. So kann man beispielsweise mit --begin die Uhrzeit festlegen, ab welcher Slurm mit der Zuweisung von Ressourcen für diesen Job bzw. mit der Verarbeitung beginnen soll.
+Nachdem das Script vollständig an Slurm übermittelt wurde, wird ihm eine job ID zugeteilt und sbatch wird beendet. Weiterhin kann man dem Kommando noch viele Optionen anstellen. So kann man beispielsweise mit --begin die Uhrzeit festlegen, ab welcher Slurm mit der Zuweisung von Ressourcen für diesen Job bzw. mit der Verarbeitung beginnen soll. Dabei können mit srun einzelne Aufgaben im Batchscript gestartet werden.
 
 6. Wie lassen sich die aktuellen Jobs und deren Status anzeigen?
 Antwort: Der Befehl lautet "squeue".  
 
+7. Der Befehlt sview: Vorteile gegenüber squeue
+Antwort: sview zeigt die Inhalte von squeue in einer grafischen Benutzeroberfläche an und ermöglicht so ein detaillierteres Analysieren der Jobs (unter der Verwendung verschiedener Optionen). Außerdem gibt es weitere tabs, so zeigt der tab partitions die Partitionen des Clusters an, welche man auf der Kommandozeile mit dem Befehl sinfo erhalten kann.
+
+8. Kann man einen bereits abgeschickten Job löschen?
+Antwort: Ja, mit dem Befehl cancel <jobid> kann ein Job abgebrochen bzw aus der Warteschleife entfernt werden.
+
+9. Können mehrere Nutzer oder Jobs gleichzeitig denselben Knoten benutzen?
+Antwort: Mit Slurm ist dies prinzipiell möglich, solange es mit der Option SelectType = select/cons_res konfiguriert wäre. Ein Aufruf von scontrol -a show config sieht man, dass auf unserem Cluster aber SelectType = select/linear gilt, also ist keine Parallelnutzung möglich.
+
+10. Wie kann man den detaillierten Status eines Jobs ausgeben?
+Antwort: Der Befehl scontrol show jobid -dd <jobid> gibt die Informationen zu dem Job mit der ID <jobid> aus.
+
+11. Welche Scheduling-Verfahren sind möglich? Welches wird benutzt?
+Antwort: Slurm hat zwei mögliche SchedulerTypes, sched/backfill und sched/builtin.
+Das Verfahren sched/backfill erlaubt Jobs, von anderen Jobs bereits reservierte Slots zu verwenden, sofern hierdurch der andere Job nicht ausgebremst wird. Dies ermöglicht trotz großer Jobs (die auf viele freie Knoten warten müssen) das Cluster optimal auszunutzen.
+Im Gegenzug dazu geht es bei sched/builtin nur nach Priorität, ein Prozess mit niedrigerer Priorität wird immer nach einem Prozess mit höherer Priorität ausgeführt.
+In der config Datei kann man sehen dass das verwendete Cluster sched/backfill verwendet.
+
+12. Wie kann ein einzelner Knoten allokiert werden?
+Mit dem Befehl salloc -p <partition> -w <nodename> -N 1 wird auf der gewählten partition eine (-N 1) Node reserviert. Welche genau gewünscht ist wird mit -w <nodename> (also etwa west7) angegeben. Dann kann mit srun hostname der Befehlt hostname gestartet werden. Der Befehlt exit beendet schließlich den job.
+
+13. Wie hoch ist das Timeout auf dem Cluster, bis alle Knoten wieder freigegeben werden?
+TODO
+
+14. Wie kann man die Priorität von Jobs nachschauen? Wie und ob kann man sie ändern?
+Nachgeschaut werden kann mit squeue oder mit scontol show jobid -dd <jobid>. Die Priotität kann mit der Option --priority (entweder bei salloc oder im batch script) geändert werden. Mit der Option scontrol update <jobid> Nice bzw Priority kann die Priorität geändert werden.
+
+15. Welche Partitionen gibt es? Wie wechsele ich sie?
+Die Partitionen können mit sinfo gesehen werden: Es gibt abi, amd, magny, nehalem und west
+Bei salloc und im Batch script kann mit -p <partition> (oder --partition=<partition>) gewählt werden.
+Mit scontrol update partition=<partition> kann sie zur Laufzeit geändert werden.
