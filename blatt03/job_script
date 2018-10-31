@@ -6,6 +6,7 @@
 #SBATCH --output=timescript.out
 #SBATCH --error=timescript.out
 
-srun timestamp
+srun timescript
 
+rm job_script.out
 echo "fertig" >> job_script.out
