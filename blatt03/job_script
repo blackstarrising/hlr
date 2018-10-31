@@ -7,3 +7,5 @@
 #SBATCH --error=timescript.out
 
 srun timestamp
+
+echo "fertig" >> job_script.out
