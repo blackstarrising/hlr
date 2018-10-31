@@ -1,0 +1,21 @@
+Aufgabe 1: Batch Queuing
+
+1. Was bedeutet der Begriff Batch Queuing?
+Antwort: Der Begriff bezeichnet das Verarbeiten von Daten mithilfe von speziellen Datenstrukturen, sogenannten Batch Queues. Ziel ist es eine eingegebene Menge von Aufgaben bzw. Daten automatisch verarbeiten zu lassen.
+
+2. Welche Aufgabe hat ein Batch-Queuing-System?
+Antwort: Das Batch-Queuing-System stellt einen "scheduler" bereit, der die Batch Queues als Menge an möglichen ausführbaren Rechenoperationen verwaltet. Dabei kann der Scheduler auch mehrere Batch Queues für verschiedene Arten von Jobs anlegen, die sich anhand für ihre Ausführung wesentlicher Parameter unterscheiden (z.B. Priorität des Jobs, vorraussichtliche Rechenzeit, Ressourcenverbrauch usw.) und in Bezuf auf diese Parameter entsprechende Ressourcen zur Verfügung stellen.
+
+3. Nennen Sie drei Beispiele für Batch-Queuing-Systeme.
+Antwort: 1: Moab Cluster Suite. 2: Univa Grid Engine. 3: OpenLava.
+
+4. Welches Batch-Queuing-System wird auf dem Cluster verwendet?
+Antwort: Das System, welches auf dem Cluster läuft heißt "Slurm".
+
+5. Machen Sie sich mit der Manpage von sbatch. Beschreiben Sie die Funktionsweise des Kommandos.
+Antwort: "sbatch" wird verwendet, um Slurm ein batch script zu übergeben, das ausgeführt werden soll. Dabei kann der Dateiname des Scripts direkt übergeben werden. Im Script kann man auch noch weitere Optionen mithilfe von "#SBATCH" festlegen.
+Nachdem das Script vollständig an Slurm übermittelt wurde, wird ihm eine job ID zugeteilt und sbatch wird beendet. Weiterhin kann man dem Kommando noch viele Optionen anstellen. So kann man beispielsweise mit --begin die Uhrzeit festlegen, ab welcher Slurm mit der Zuweisung von Ressourcen für diesen Job bzw. mit der Verarbeitung beginnen soll.
+
+6. Wie lassen sich die aktuellen Jobs und deren Status anzeigen?
+Antwort: Der Befehl lautet "squeue".  
+
