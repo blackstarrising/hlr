@@ -57,13 +57,22 @@ Es kann von gprof keine Zeiten mehr gemessen werden. Der Grund hierfür ist, das
 Compileroptimierung O3:
 CFLAGS = -std=c11 -pedantic -Wall -Wextra -O3 -pg
 
+Berechnungszeit:    118.112916 s
+  %   cumulative   self              self     total
+ time   seconds   seconds    calls  Ts/call  Ts/call  name
 
-Kommentar
 
 #############################################
 
 Compileroptimierung Os:
 CFLAGS = -std=c11 -pedantic -Wall -Wextra -Os -pg
+
+Berechnungszeit:    125.636921 s
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total
+ time   seconds   seconds    calls  Ts/call  Ts/call  name
+ 79.63      3.82     3.82                             getResiduum
+ 20.69      4.82     0.99                             allocateMemory
 
 Kommentar
 
