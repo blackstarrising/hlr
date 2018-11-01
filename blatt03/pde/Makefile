@@ -10,13 +10,13 @@ OBJS = partdiff-seq.o askparams.o displaymatrix.o
 
 # Rule to create *.o from *.c
 .c.o:
-	$(CC) -c $(CFLAGS) $*.c
+	$(CC) -c $(CFLAGS) $*.c -pg
 
 # Targets ...
 all: partdiff-seq
 
 partdiff-seq: $(OBJS) Makefile
-	$(CC) $(LFLAGS) -o $@ $(OBJS) $(LIBS)
+	$(CC) $(LFLAGS) -o $@ $(OBJS) $(LIBS) -pg
 
 clean:
 	$(RM) *.o *~
