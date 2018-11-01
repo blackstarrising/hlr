@@ -2,7 +2,7 @@
 CC = gcc
 
 # Compiler flags, paths and libraries
-CFLAGS = -std=c11 -pedantic -Wall -Wextra
+CFLAGS = -std=c11 -pedantic -Wall -Wextra -O2 -pg
 LFLAGS = $(CFLAGS)
 LIBS   = -lm
 
@@ -10,13 +10,13 @@ OBJS = partdiff-seq.o askparams.o displaymatrix.o
 
 # Rule to create *.o from *.c
 .c.o:
-	$(CC) -c $(CFLAGS) $*.c -pg
+	$(CC) -c $(CFLAGS) $*.c
 
 # Targets ...
 all: partdiff-seq
 
 partdiff-seq: $(OBJS) Makefile
-	$(CC) $(LFLAGS) -o $@ $(OBJS) $(LIBS) -pg
+	$(CC) $(LFLAGS) -o $@ $(OBJS) $(LIBS)
 
 clean:
 	$(RM) *.o *~

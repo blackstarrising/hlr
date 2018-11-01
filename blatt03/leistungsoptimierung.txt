@@ -1,0 +1,71 @@
+Zunächst wurde mit das Makefile mit -pg dazu gebracht, gprof zu verwenden. Hiermit haben wir dann verschiedene COmpiler-Optionen getestet.
+
+#############################################
+
+Keine Compileroptimierung:
+CFLAGS = -std=c11 -pedantic -Wall -Wextra -O0 -pg
+
+Berechnungszeit:    186.154540 s
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total
+  time   seconds   seconds    calls   s/call   s/call  name
+  95.83    142.88   142.88        1   142.88   148.84  calculate
+  4.00    148.84     5.96 2758256640     0.00     0.00  getResiduum
+  0.30    149.29     0.45        1     0.45     0.45  initMatrices
+  0.00    149.29     0.00        4     0.00     0.00  allocateMemory
+  0.00    149.29     0.00        1     0.00     0.00  AskParams
+  0.00    149.29     0.00        1     0.00     0.00  DisplayMatrix
+  0.00    149.29     0.00        1     0.00     0.00  allocateMatrices
+  0.00    149.29     0.00        1     0.00     0.00  displayStatistics
+  0.00    149.29     0.00        1     0.00     0.00  freeMatrices
+  0.00    149.29     0.00        1     0.00     0.00  initVariables
+
+Die Funktion calculate benötigt 95.83% der Laufzeit des Programmes mit 142.88 Sekunden bei einem Aufruf. getResiduum braucht insgesamt auch 5.96s, aber nur da es so oft aufgerufen wird (zeit pro Aufruf: 0).
+
+#############################################
+
+Compileroptimierung O1:
+CFLAGS = -std=c11 -pedantic -Wall -Wextra -O1 -pg
+
+Berechnungszeit:    152.332796 s
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total
+  time   seconds   seconds    calls  ms/call  ms/call  name
+  95.20    108.06   108.06                             main
+  4.21    112.84     4.78 2758256640     0.00     0.00  getResiduum
+  0.77    113.71     0.87        4   217.89   217.89  allocateMemory
+  0.00    113.71     0.00        1     0.00     0.00  AskParams
+  0.00    113.71     0.00        1     0.00     0.00  DisplayMatrix
+
+
+Mit einer Optimierung von O1 wird die Laufzeit, wie erwartet, kürzer. Es wird die meiste Rechenzeit von main eingenommen (vermutlich weil hier nun calculate drinsteckt). Generell sind weniger unterschiedliche aufgerufene Funktionen zu sehen.
+
+#############################################
+
+Compileroptimierung O2:
+CFLAGS = -std=c11 -pedantic -Wall -Wextra -O2 -pg
+
+Berechnungszeit:    126.581384 s
+Each sample counts as 0.01 seconds.
+ no time accumulated
+ 
+
+Es kann von gprof keine Zeiten mehr gemessen werden. Der Grund hierfür ist, dass der Compiler nun einen langen Maschienencode erzeugt, der nicht mehr in Funktionen unterteilt ist.
+
+#############################################
+
+Compileroptimierung O3:
+CFLAGS = -std=c11 -pedantic -Wall -Wextra -O3 -pg
+
+
+Kommentar
+
+#############################################
+
+Compileroptimierung Os:
+CFLAGS = -std=c11 -pedantic -Wall -Wextra -Os -pg
+
+Kommentar
+
+#############################################
+
