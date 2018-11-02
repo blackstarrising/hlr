@@ -1,8 +1,9 @@
+
 # Common definitions
 CC = gcc
 
 # Compiler flags, paths and libraries
-CFLAGS = -std=c11 -pedantic -Wall -Wextra -Os -pg
+CFLAGS = -std=c11 -pedantic -Wall -Wextra -O0 -pg
 LFLAGS = $(CFLAGS)
 LIBS   = -lm
 

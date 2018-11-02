@@ -61,6 +61,7 @@ Berechnungszeit:    118.112916 s
   %   cumulative   self              self     total
  time   seconds   seconds    calls  Ts/call  Ts/call  name
 
+Auch hier kann keine Zeitmessung mehr gemacht werden.
 
 #############################################
 
@@ -74,7 +75,51 @@ Each sample counts as 0.01 seconds.
  79.63      3.82     3.82                             getResiduum
  20.69      4.82     0.99                             allocateMemory
 
-Kommentar
+Die Option Os erlaubt wieder eine Ueitmessung und hat eine Gesamtlaufzeit die im Bereich der Laufzeit unter der Verwendung von O2 liegt.
 
 #############################################
+
+Insgesamt kann erkannt werden, dass die Funktion calculate die meisten Probleme macht. Aus diesem Grund sollen hier auch die hauptsächlichen Änderungen passieren.
+
+Hier noch eine Ausgabe von perf:
+
+Performance counter stats for './partdiff-seq 1 2 64 1 2 10240':
+
+     144629,659973      task-clock (msec)         #    0,999 CPUs utilized
+               477      context-switches          #    0,003 K/sec
+                 0      cpu-migrations            #    0,000 K/sec
+             1.119      page-faults               #    0,008 K/sec
+                 0      cycles                    #    0,000 GHz
+   296.299.708.532      stalled-cycles-frontend   #    0,00% frontend cycles idle
+   126.512.307.944      stalled-cycles-backend    #    0,00% backend  cycles idle
+   477.390.158.665      instructions
+                                                  #    0,62  stalled cycles per insn
+    22.103.072.466      branches                  #  152,825 M/sec
+         8.189.696      branch-misses             #    0,04% of all branches
+
+     144,712383957 seconds time elapsed
+
+TODO: Bedeutung erklären!
+
+Die Änderungen am Programm werden zunächst mit Optimierungsmodus O0 getestet.
+
+Änderung 1: Vertausch von Spalten- und Zeileniteration.
+Die Matritzen wurden zunächst Reihen- und dann Spaltenweise durchlaufen. Dies ist konträr zur Definition der Matritzen. Ein vertauschen der Indizes bringt eine Verringerung der Programmlaufzeit:
+
+Berechnungszeit:    106.481083 s
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total
+  time   seconds   seconds    calls   s/call   s/call  name
+  90.61     62.68    62.68        1    62.68    68.83  calculate
+  8.89     68.83     6.15 2758256640     0.00     0.00  getResiduum
+  0.64     69.27     0.44        1     0.44     0.44  initMatrices
+  0.00     69.27     0.00        4     0.00     0.00  allocateMemory
+  0.00     69.27     0.00        1     0.00     0.00  AskParams
+  0.00     69.27     0.00        1     0.00     0.00  DisplayMatrix
+  0.00     69.27     0.00        1     0.00     0.00  allocateMatrices
+  0.00     69.27     0.00        1     0.00     0.00  displayStatistics
+  0.00     69.27     0.00        1     0.00     0.00  freeMatrices
+  0.00     69.27     0.00        1     0.00     0.00  initVariables
+
+Calculate nimmt nun mehr 90% der Programmlaufzeit ein, was eine Verbesserung darstellt.
 
