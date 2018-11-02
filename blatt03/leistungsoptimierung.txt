@@ -123,7 +123,7 @@ Each sample counts as 0.01 seconds.
   0.00     69.27     0.00        1     0.00     0.00  initVariables
 
 Calculate nimmt nun mehr 90% der Programmlaufzeit ein, was eine Verbesserung darstellt.
-Wichtig ist, dass diese Veränderung nur für das Jacobi-Verfahren funktioniert. Wenn stattdessen Zellen in der gleichen Iteration, in der sie geändert werden, bereits wieder in Rechnungen einfließen ist es relevant in welcher Reihenfolge die Matrix durchlaufen wird. Für die Jacobi-Methode ist dies allerdings egal.
+Wichtig ist, dass diese Veränderung nur für das Jacobi-Verfahren funktioniert. Wenn stattdessen Zellen in der gleichen Iteration, in der sie geändert werden, bereits wieder in Rechnungen einfließen ist es relevant in welcher Reihenfolge die Matrix durchlaufen wird. Für die Jacobi-Methode ist dies allerdings egal. TODO: Das wäre ideal mit so ner Pointer-Konstruktion, dann sind wir schneller und, wenn die dann wieder die alte Reihenfolge hat, auch richtig für beide Methoden.
 
 
 Änderung 2: In Zeile 236 wird mithilfe einer If-Abfrage der Absolutbetrag genommen. Dies geht besser mit der math.h - Funktion fabs().
@@ -144,3 +144,6 @@ Each sample counts as 0.01 seconds.
   0.00     64.00     0.00        1     0.00     0.00  initVariables
 		      
 Durch die Änderung ist wieder eine, wenn auch geringfügige, Verbesserung erkennbar. Interessanterweise ist auch getResiduum schneller geworden.
+
+
+Hm hab aktuell keine Idee was sonst noch ungünstig sein könnte...
