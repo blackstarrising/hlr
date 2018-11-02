@@ -102,6 +102,7 @@ Performance counter stats for './partdiff-seq 1 2 64 1 2 10240':
 TODO: Bedeutung erklären!
 
 Die Änderungen am Programm werden zunächst mit Optimierungsmodus O0 getestet.
+Alle Änderungen werden Konsekutiv angewandt und mit der vorigen Optimierungsstufe verglichen.
 
 Änderung 1: Vertausch von Spalten- und Zeileniteration.
 Die Matritzen wurden zunächst Reihen- und dann Spaltenweise durchlaufen. Dies ist konträr zur Definition der Matritzen. Ein vertauschen der Indizes bringt eine Verringerung der Programmlaufzeit:
@@ -122,4 +123,24 @@ Each sample counts as 0.01 seconds.
   0.00     69.27     0.00        1     0.00     0.00  initVariables
 
 Calculate nimmt nun mehr 90% der Programmlaufzeit ein, was eine Verbesserung darstellt.
+Wichtig ist, dass diese Veränderung nur für das Jacobi-Verfahren funktioniert. Wenn stattdessen Zellen in der gleichen Iteration, in der sie geändert werden, bereits wieder in Rechnungen einfließen ist es relevant in welcher Reihenfolge die Matrix durchlaufen wird. Für die Jacobi-Methode ist dies allerdings egal.
 
+
+Änderung 2: In Zeile 236 wird mithilfe einer If-Abfrage der Absolutbetrag genommen. Dies geht besser mit der math.h - Funktion fabs().
+
+Berechnungszeit:    100.926439 s
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total
+  time   seconds   seconds    calls   s/call   s/call  name
+  89.90     57.47    57.47        1    57.47    63.41  calculate
+  9.30     63.41     5.94 2758256640     0.00     0.00  getResiduum
+  0.93     64.00     0.60        1     0.60     0.60  initMatrices
+  0.00     64.00     0.00        4     0.00     0.00  allocateMemory
+  0.00     64.00     0.00        1     0.00     0.00  AskParams
+  0.00     64.00     0.00        1     0.00     0.00  DisplayMatrix
+  0.00     64.00     0.00        1     0.00     0.00  allocateMatrices
+  0.00     64.00     0.00        1     0.00     0.00  displayStatistics
+  0.00     64.00     0.00        1     0.00     0.00  freeMatrices
+  0.00     64.00     0.00        1     0.00     0.00  initVariables
+		      
+Durch die Änderung ist wieder eine, wenn auch geringfügige, Verbesserung erkennbar. Interessanterweise ist auch getResiduum schneller geworden.
