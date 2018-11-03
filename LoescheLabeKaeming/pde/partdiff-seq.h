@@ -26,18 +26,25 @@
 #ifndef PI
 #define PI 			3.141592653589793
 #endif
-#ifndef FALSE
-#define FALSE			0
-#define TRUE			1
-#endif
-#define TWO_PI_SQUARE 		(2*PI*PI)
+#define TWO_PI_SQUARE 		(2 * PI * PI)
 #define MAX_ITERATION  		200000
-#define GAUSS_SEIDEL 		1
-#define JACOBI 			2
-#define FUNC_1			1
-#define FUNC_2			2
-#define TERM_1			1
-#define TERM_2			2
+#define METH_GAUSS_SEIDEL 	1
+#define METH_JACOBI 		2
+#define FUNC_F0			1
+#define FUNC_FPISIN		2
+#define TERM_PREC		1
+#define TERM_ITER		2
+
+struct options
+{
+	int     number;         /* Number of threads                              */
+	int     method;         /* Gauss Seidel or Jacobi method of iteration     */
+	int     interlines;     /* matrix size = interlines*8+9                   */
+	int     inf_func;       /* inference function                             */
+	int     termination;    /* termination condition                          */
+	int     term_iteration; /* terminate if iteration number reached          */
+	double  term_precision; /* terminate if precision reached                 */
+};
 
 /* *************************** */
 /* Some function declarations. */
@@ -46,31 +53,8 @@
 /* - askparams.c               */
 /* - displaymatrix.c           */
 /* *************************** */
-void AskParams (int *method,
-		int *interlines,
-		int *func,
-		int *termination,
-		double *term_precision,
-		int *term_iteration, int argC, char **argV);
+void AskParams( struct options*, int, char** );
 
-void DisplayMatrix (char *s, double *v, int interlines);
+void DisplayMatrix ( char*, double*, int );
 
-void DisplayMatrixAddr (char *s, double ***v, int interlines, int matrixnum);
-
-void initVariables (void);
-
-void allocateMatrices (void);
-
-void initMatrices (void);
-
-void freeMatrices (void);
-
-double getResiduum (int, int);
-
-void checkQuit (void);
-
-void calculate (void);
-
-void displayStatistics (void);
-
-int errorQuit (void);
+void DisplayMatrixAddr ( char*, double***, int, int );

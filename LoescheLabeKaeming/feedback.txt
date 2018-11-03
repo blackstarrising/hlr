@@ -1,17 +1,22 @@
 Die Bearbeitungszeit bitte in ganzen Stunden angeben (aufrunden).
+Die Bearbeitungszeit betrug ca 10 Stunden.
 In den restlichen Zeilen jeweils ein X in der zutreffenden Spalte setzen.
 
-Bearbeitungszeit: 14h 
-Schwierigkeit:     [ ] zu leicht         [ ] genau richtig     [x] zu schwer
-Lehrreich:         [ ] wenig             [x] etwas             [ ] sehr
-Verständlichkeit:  [x] großteils unklar  [ ] teilweise unklar  [ ] verständlich
+Bearbeitungszeit:  
+Schwierigkeit:     [ ] zu leicht         [ ] genau richtig     [X] zu schwer
+Lehrreich:         [ ] wenig             [ ] etwas             [X] sehr
+Verständlichkeit:  [ ] großteils unklar  [ ] teilweise unklar  [X] verständlich
 
 Kommentar:
 Zeitaufwand zu groß? Wo sind Sie nicht weiter gekommen?
-     Wir hingen sehr lange an der Korrektur von simple.c.
+Die größte Schwierigkeit bestand an der Vielzahl neu zu erlerndenden Programme, wie slurm, perf oder gprof. Wir würden gern etwas mehr Zeit für diese durchaus nützlichen Programme haben (vielleicht mal ein "Set" an Programmen über zwei Übungszettel hinweg nutzen).
+
 Was war zu schwer oder unverständlich?
-     Ohne C-Vorkenntnisse ist es sehr schwer zu verstehen, was die einzelnen Funktionen mistake tun sollen. Hier fehlt eine eindeutige Kommentierung was genau das Programm denn tut! Das einfache debuggen wird so durch das Rätseln was überhaupt gefragr ist, wie viel man ändern kann etc deutlich erschwert bzw verlangsamt.
+
+Es war uns nicht ganz klar, ob wir mit unseren eigenen Codeoptimierungen den Faktor zehn erreichen sollten oder ob sich das auf eigene und Compileroptimierungen bezieht.
 Was könnten wir verbessern?
-     Eine Erklärung von dem Grundprinzip von Speicherallokation etc in C wäre gut, aber das kann man sich zur Not auch selber anlesen. Essentiell ist aber eine ordentliche Kommentierung des zu korrigierenden codes, damit man keinen Code debuggt ohne zu wissen was er denn tun soll (die Angabe der Ausgabe reicht hier niht, die kann ich auch sehr einfach auf einem ganz anderen Weg erreicht).
+An sich war die Aufgabenstellung gut und die Aufgabe an sich sinnvoll. Bis auf die oben genannte Kritik kann die Aufgabenstellung gern so bleiben.
+
 Was hat Ihnen besonders gut gefallen?
-     Die prinzipielle Idee und das Erlernen des Programmes GDB zum debugging ist sehr gut, da gerade das debugging eine sehr wichtige Fähigkeit ist.
+
+Das war das erste mal, dass wir uns wirklich intensiv mit dem Clustersystem beschäftigen und uns einlesen mussten. Ein hochinteressantes und spannendes Thema! Ein Gruppenmitglied war überrascht, dass partdiff-seq auf dem cluster länger braucht als auf dem Heim-Tower mit einer relativ "alten" first-generation i7 860 CPU.

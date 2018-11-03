@@ -1,13 +1,22 @@
 Die Bearbeitungszeit bitte in ganzen Stunden angeben (aufrunden).
+Die Bearbeitungszeit betrug ca 10 Stunden.
 In den restlichen Zeilen jeweils ein X in der zutreffenden Spalte setzen.
 
 Bearbeitungszeit:  
-Schwierigkeit:     [ ] zu leicht         [ ] genau richtig     [ ] zu schwer
-Lehrreich:         [ ] wenig             [ ] etwas             [ ] sehr
-Verständlichkeit:  [ ] großteils unklar  [ ] teilweise unklar  [ ] verständlich
+Schwierigkeit:     [ ] zu leicht         [ ] genau richtig     [X] zu schwer
+Lehrreich:         [ ] wenig             [ ] etwas             [X] sehr
+Verständlichkeit:  [ ] großteils unklar  [ ] teilweise unklar  [X] verständlich
 
 Kommentar:
 Zeitaufwand zu groß? Wo sind Sie nicht weiter gekommen?
+Die größte Schwierigkeit bestand an der Vielzahl neu zu erlerndenden Programme, wie slurm, perf oder gprof. Wir würden gern etwas mehr Zeit für diese durchaus nützlichen Programme haben (vielleicht mal ein "Set" an Programmen über zwei Übungszettel hinweg nutzen).
+
 Was war zu schwer oder unverständlich?
+
+Es war uns nicht ganz klar, ob wir mit unseren eigenen Codeoptimierungen den Faktor zehn erreichen sollten oder ob sich das auf eigene und Compileroptimierungen bezieht.
 Was könnten wir verbessern?
+An sich war die Aufgabenstellung gut und die Aufgabe an sich sinnvoll. Bis auf die oben genannte Kritik kann die Aufgabenstellung gern so bleiben.
+
 Was hat Ihnen besonders gut gefallen?
+
+Das war das erste mal, dass wir uns wirklich intensiv mit dem Clustersystem beschäftigen und uns einlesen mussten. Ein hochinteressantes und spannendes Thema! Ein Gruppenmitglied war überrascht, dass partdiff-seq auf dem cluster länger braucht als auf dem Heim-Tower mit einer relativ "alten" first-generation i7 860 CPU.

@@ -45,67 +45,62 @@
 #include "partdiff-seq.h"
 #include <stdio.h>
 
-void
-DisplayMatrix (char *s, double *v, int interlines)
+void DisplayMatrix ( char *s, double *v, int interlines )
 {
   FILE *file;
-  int x, y;
+  int x,y;
   int lines = 8 * interlines + 9;
 
-  printf ("%s\n", s);
-  for (y = 0; y < 9; y++)
+  printf ( "%s\n", s );
+  for ( y = 0; y < 9; y++ )
+  {
+    for ( x = 0; x < 9; x++ )
     {
-      for (x = 0; x < 9; x++)
-	{
-	  printf ("%7.4f",
-		  v[y * (interlines + 1) * lines + x * (interlines + 1)]);
-	}
-      printf ("\n");
+      printf ( "%7.4f", v[y*(interlines+1)*lines+x*(interlines+1)]);
     }
-  fflush (stdout);
-  file = fopen ("function.data", "w");
-  for (y = 0; y < 9; y++)
+    printf ( "\n" );
+  }
+  fflush ( stdout );
+  file=fopen("function.data","w");
+  for ( y = 0; y < 9; y++)
+  {
+    for ( x = 0; x < 9; x++)
     {
-      for (x = 0; x < 9; x++)
-	{
-	  fprintf (file, " %7.4f  %7.4f  %7.4f\n", (double) (x) * 0.125,
-		   (double) (y) * 0.125,
-		   v[y * (interlines + 1) * lines + x * (interlines + 1)]);
-	}
-      fprintf (file, "\n");
+      fprintf(file," %7.4f  %7.4f  %7.4f\n", (double)(x)*0.125,(double)(y)*0.125,
+      v[y*(interlines+1)*lines+x*(interlines+1)]);
     }
-  fclose (file);
+    fprintf(file,"\n");
+  }
+  fclose(file);
 }
 
 
-void
-DisplayMatrixAddr (char *s, double ***v, int interlines, int matrixnum)
+void DisplayMatrixAddr ( char *s, double ***v, int interlines, int matrixnum )
 {
   FILE *file;
-  int x, y;
+  int x,y;
 
-  printf ("%s\n", s);
-  for (y = 0; y < 9; y++)
+  printf ( "%s\n", s );
+  for ( y = 0; y < 9; y++ )
+  {
+    for ( x = 0; x < 9; x++ )
     {
-      for (x = 0; x < 9; x++)
-	{
-	  printf ("%7.4f",
-		  v[matrixnum][y * (interlines + 1)][x * (interlines + 1)]);
-	}
-      printf ("\n");
+      printf ( "%7.4f", v[matrixnum][y*(interlines+1)][x*(interlines+1)]);
     }
-  fflush (stdout);
-  file = fopen ("function.data", "w");
-  for (y = 0; y < 9; y++)
+    printf ( "\n" );
+  }
+  fflush ( stdout );
+  file=fopen("function.data","w");
+  for ( y = 0; y < 9; y++)
+  {
+    for ( x = 0; x < 9; x++)
     {
-      for (x = 0; x < 9; x++)
-	{
-	  fprintf (file, " %7.4f  %7.4f  %7.4f\n", (double) (x) * 0.125,
-		   (double) (y) * 0.125,
-		   v[matrixnum][y * (interlines + 1)][x * (interlines + 1)]);
-	}
-      fprintf (file, "\n");
+      fprintf(file," %7.4f  %7.4f  %7.4f\n", (double)(x)*0.125,(double)(y)*0.125,
+      v[matrixnum][y*(interlines+1)][x*(interlines+1)]);
     }
-  fclose (file);
+    fprintf(file,"\n");
+  }
+  fclose(file);
 
 }
+
