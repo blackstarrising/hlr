@@ -99,13 +99,16 @@ Performance counter stats for './partdiff-seq 1 2 64 1 2 10240':
 
      144,712383957 seconds time elapsed
 
-TODO: Bedeutung erklären!
+Mit perf stat erhält man sogennante "counter stats", man weist also die CPU an, eine Zählstatistik für bestimmte Ereignisse anzulegen. Betrachten wir beispielsweise die letzten drei Punkte (instructions, branches und branch-misses):
+Die Zahl vor instructions gibt an, dass in den 144 sekunden ca. 477,4 Milliarden Befehle ausgeführt wurden. Insgesamt wurden 22 Milliarden Verzweigungen ausgeführt und davon führten 8 Millionen zu einem "Branch miss" und einem darauffolgenden pipeline flush der CPU (CPU wirft seine Befehlspipeline über Bord, damit die anschließenden Berechnungen mit Sicherheit fehlerfrei ausgeführt werden können).
+
 
 Die Änderungen am Programm werden zunächst mit Optimierungsmodus O0 getestet.
 Alle Änderungen werden Konsekutiv angewandt und mit der vorigen Optimierungsstufe verglichen.
 
 Änderung 1: Vertausch von Spalten- und Zeileniteration.
-Die Matritzen wurden zunächst Reihen- und dann Spaltenweise durchlaufen. Dies ist konträr zur Definition der Matritzen. Ein vertauschen der Indizes bringt eine Verringerung der Programmlaufzeit:
+Die Matritzen wurden zunächst Spalten- und dann Reihenweise durchlaufen. Das ist schlecht, weil die Matrizenelemente in C einfach hintereinanderliegen. So ist die Speicherbelegung der Matrix {{1,2,3},{4,5,6}} identisch mit der Speicherbelegung der Matrix {1,2,3,4,5,6}. Wenn wir versuchen auf ein Matrixelement zuzugreifen, hält die CPU für uns die nachfolgenden Elemente im Cache vor, weil wir wahrscheinlich im weiteren Verlauf der Rechnung darauf zugreifen wollen. Wenn wir aber nun zunächst in der Spalte nach unten gehen, müssen wir einen großen Speicherbereich überspringen, was länger dauert als einfach das nächste Element zu wählen. Außerdem kann es sein, dass dieses Element von der CPU nicht mehr im Cache vorgehalten wird, da dieser begrenzt ist und die CPU muss jedes mal erneut den Wert aus dem Hauptspeicher auslesen.
+Insgesamt ist die Jacobi-Methode von diesem Problem wesentlich stärker betroffen als die Gauss-Seidel Methode, da hier der Wert zusätzlich noch in den Speicher einer neuen Matrix kopiert werden muss.
 
 Berechnungszeit:    106.481083 s
 Each sample counts as 0.01 seconds.
@@ -145,5 +148,6 @@ Each sample counts as 0.01 seconds.
 		      
 Durch die Änderung ist wieder eine, wenn auch geringfügige, Verbesserung erkennbar. Interessanterweise ist auch getResiduum schneller geworden.
 
+Wenn wir nun mit diesen Optimierungen zusätzlich wieder die Compileroptimierung O3 anschalten, erhalten wir folgendes Ergebnis:
 
-Hm hab aktuell keine Idee was sonst noch ungünstig sein könnte...
+
