@@ -121,7 +121,7 @@ allocateMatrices (struct calculation_arguments* arguments)
 	arguments->M = allocateMemory(arguments->num_matrices * (N + 1) * (N + 1) * sizeof(double));
 	arguments->Matrix = allocateMemory(arguments->num_matrices * sizeof(double**));
 
-	//do parallelization NOT!!!!
+	//Vielleicht doch iwie collape möglich?
 	#pragma omp parallel for private(i)
 	for (i = 0; i < arguments->num_matrices; i++)
 	{
@@ -161,7 +161,7 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 			}
 		}
 	}
-// export OMP_NUM_THREADS=12
+
 	/* initialize borders, depending on function (function 2: nothing to do) */
 	if (options->inf_func == FUNC_F0)
 	{

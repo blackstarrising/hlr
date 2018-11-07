@@ -59,40 +59,74 @@ Berechnungszeit:    62.230211 s
 
 ########## 10 THREADS ##########
 
-Berechnungszeit:    62.174491 s 
-Berechnungszeit:    62.961782 s 
-Berechnungszeit:    63.229980 s
-Berechnungszeit:    65.607661 s
-Berechnungszeit:    63.323414 s 
+west5 - Berechnungszeit:    62.174491 s 
+west5 - Berechnungszeit:    62.961782 s 
+west5 - Berechnungszeit:    81.024829 s
+west5 - Berechnungszeit:    85.401652 s
+west4 - Berechnungszeit:    77.279447 s 
 
 ########## 9 THREADS ##########
 
-Berechnungszeit:    69.946976 s
-Berechnungszeit:    69.654195 s
-Berechnungszeit:    70.628769 s
-Berechnungszeit:    70.402042 s
-Berechnungszeit:    69.114576 s
+west4 - Berechnungszeit:    74.017334 s
+west4 - Berechnungszeit:    73.330803 s
+west4 - Berechnungszeit:    77.750006 s
+west4 - Berechnungszeit:    74.426540 s
+west4 - Berechnungszeit:    69.569228 s
 
 ########## 8 THREADS ##########
 
-Berechnungszeit:    75.538710 s
-Berechnungszeit:    77.485332 s
-Berechnungszeit:    75.716125 s
-Berechnungszeit:    75.128375 s
-Berechnungszeit:    75.051386 s
+west4 - Berechnungszeit:    77.916174 s
+west4 - Berechnungszeit:    78.411833 s
+west4 - Berechnungszeit:    74.844956 s
+west4 - Berechnungszeit:    77.142549 s
+west4 - Berechnungszeit:    74.169101 s
 
 ########## 7 THREADS ##########
 
-Berechnungszeit:    87.001519 s
-Berechnungszeit:    88.747722 s
-Berechnungszeit:    87.274099 s
-Berechnungszeit:    85.948922 s
-Berechnungszeit:    85.594653 s
+west4 - Berechnungszeit:    90.314470 s
+west4 - Berechnungszeit:    89.723022 s
+west4 - Berechnungszeit:    91.720486 s
+west4 - Berechnungszeit:    91.648569 s
+west4 - Berechnungszeit:    84.457092 s
 
 ########## 6 THREADS ##########
 
-Berechnungszeit:    100.774594 s
-Berechnungszeit:    100.256289 s
-Berechnungszeit:    100.588063 s
-Berechnungszeit:    99.768309 s
-Berechnungszeit:    99.768309 s
+west4 - Berechnungszeit:    101.774891 s
+west4 - Berechnungszeit:    110.735442 s
+west4 - Berechnungszeit:    105.774155 s
+west4 - Berechnungszeit:    103.248976 s
+west4 - Berechnungszeit:    100.612784 s
+
+########## 5 THREADS ##########
+
+west3 - Berechnungszeit:    138.791985 s
+west3 - Berechnungszeit:    124.319990 s
+west3 - Berechnungszeit:    129.626103 s
+west3 - Berechnungszeit:    124.063515 s
+west3 - Berechnungszeit:    124.765170 s
+
+########## 4 THREADS ##########
+
+west3 - Berechnungszeit:    146.154638 s
+west3 - Berechnungszeit:    146.672621 s
+west3 - Berechnungszeit:    149.596954 s
+west3 - Berechnungszeit:    140.860076 s
+west3 - Berechnungszeit:    150.375955 s
+
+########## 3 THREADS ##########
+
+west9 - Berechnungszeit:    190.243429 s
+west3 - Berechnungszeit:    182.218812 s
+west3 - Berechnungszeit:    193.961933 s
+west3 - Berechnungszeit:    195.211746 s
+west3 - Berechnungszeit:    193.644794 s
+
+########## 2 THREADS ##########
+
+west3 - Berechnungszeit:    275.922130 s
+west3 - Berechnungszeit:    276.236269 s
+west3 - Berechnungszeit:    275.080806 s
+west3 - Berechnungszeit:    274.194834 s
+west3 - Berechnungszeit:    276.082244 s
+
+
