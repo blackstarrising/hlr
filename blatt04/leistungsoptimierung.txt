@@ -1,0 +1,98 @@
+Folgender Befehlsaufruf wurde verwendet:
+./partdiff 1 2 512 2 2 500
+
+########## KEINE PARALLELISIERUNG ##########
+
+Berechnungszeit:    242.083483 s 
+Speicherbedarf:     257.126236 MiB
+Berechnungsmethode: Jacobi
+Interlines:         512
+Stoerfunktion:      f(x,y) = 2pi^2*sin(pi*x)sin(pi*y)
+Terminierung:       Anzahl der Iterationen
+Anzahl Iterationen: 500
+Norm des Fehlers:   2.929487e-07
+
+Matrix:
+ 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000
+ 0.0000 0.0000 0.0000 0.0001 0.0001 0.0001 0.0000 0.0000 0.0000
+ 0.0000 0.0000 0.0001 0.0001 0.0001 0.0001 0.0001 0.0000 0.0000
+ 0.0000 0.0001 0.0001 0.0001 0.0001 0.0001 0.0001 0.0001 0.0000
+ 0.0000 0.0001 0.0001 0.0001 0.0001 0.0001 0.0001 0.0001 0.0000
+ 0.0000 0.0001 0.0001 0.0001 0.0001 0.0001 0.0001 0.0001 0.0000
+ 0.0000 0.0000 0.0001 0.0001 0.0001 0.0001 0.0001 0.0000 0.0000
+ 0.0000 0.0000 0.0000 0.0001 0.0001 0.0001 0.0000 0.0000 0.0000
+ 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000
+
+########## 12 THREADS ##########
+
+Berechnungszeit:    58.485000 s
+Berechnungszeit:    58.379921 s 
+Berechnungszeit:    58.588568 s
+Berechnungszeit:    58.881230 s
+Berechnungszeit:    58.423618 s 
+Speicherbedarf:     257.126236 MiB
+Berechnungsmethode: Jacobi
+Interlines:         512
+Stoerfunktion:      f(x,y) = 2pi^2*sin(pi*x)sin(pi*y)
+Terminierung:       Anzahl der Iterationen
+Anzahl Iterationen: 500
+Norm des Fehlers:   2.537010e-07
+
+Matrix:
+ 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000
+ 0.0000 0.0000 0.0000 0.0001 0.0001 0.0001 0.0000 0.0000 0.0000
+ 0.0000 0.0000 0.0001 0.0001 0.0001 0.0001 0.0001 0.0000 0.0000
+ 0.0000 0.0001 0.0001 0.0001 0.0001 0.0001 0.0001 0.0001 0.0000
+ 0.0000 0.0001 0.0001 0.0001 0.0001 0.0001 0.0001 0.0001 0.0000
+ 0.0000 0.0001 0.0001 0.0001 0.0001 0.0001 0.0001 0.0001 0.0000
+ 0.0000 0.0000 0.0001 0.0001 0.0001 0.0001 0.0001 0.0000 0.0000
+ 0.0000 0.0000 0.0000 0.0001 0.0001 0.0001 0.0000 0.0000 0.0000
+ 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000
+
+########## 11 THREADS ##########
+
+Berechnungszeit:    60.203020 s
+Berechnungszeit:    59.180830 s
+Berechnungszeit:    59.916412 s
+Berechnungszeit:    63.120571 s
+Berechnungszeit:    62.230211 s
+
+########## 10 THREADS ##########
+
+Berechnungszeit:    62.174491 s 
+Berechnungszeit:    62.961782 s 
+Berechnungszeit:    63.229980 s
+Berechnungszeit:    65.607661 s
+Berechnungszeit:    63.323414 s 
+
+########## 9 THREADS ##########
+
+Berechnungszeit:    69.946976 s
+Berechnungszeit:    69.654195 s
+Berechnungszeit:    70.628769 s
+Berechnungszeit:    70.402042 s
+Berechnungszeit:    69.114576 s
+
+########## 8 THREADS ##########
+
+Berechnungszeit:    75.538710 s
+Berechnungszeit:    77.485332 s
+Berechnungszeit:    75.716125 s
+Berechnungszeit:    75.128375 s
+Berechnungszeit:    75.051386 s
+
+########## 7 THREADS ##########
+
+Berechnungszeit:    87.001519 s
+Berechnungszeit:    88.747722 s
+Berechnungszeit:    87.274099 s
+Berechnungszeit:    85.948922 s
+Berechnungszeit:    85.594653 s
+
+########## 6 THREADS ##########
+
+Berechnungszeit:    100.774594 s
+Berechnungszeit:    100.256289 s
+Berechnungszeit:    100.588063 s
+Berechnungszeit:    99.768309 s
+Berechnungszeit:    99.768309 s
