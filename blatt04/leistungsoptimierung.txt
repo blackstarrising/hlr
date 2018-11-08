@@ -128,5 +128,3 @@ west3 - Berechnungszeit:    276.236269 s
 west3 - Berechnungszeit:    275.080806 s
 west3 - Berechnungszeit:    274.194834 s
 west3 - Berechnungszeit:    276.082244 s
-
-
