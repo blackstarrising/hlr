@@ -59,10 +59,10 @@ Berechnungszeit:    62.230211 s
 
 ########## 10 THREADS ##########
 
-west5 - Berechnungszeit:    62.174491 s 
-west5 - Berechnungszeit:    62.961782 s 
-west5 - Berechnungszeit:    81.024829 s
-west5 - Berechnungszeit:    85.401652 s
+Berechnungszeit:    62.174491 s 
+Berechnungszeit:    62.961782 s 
+Berechnungszeit:    81.024829 s
+west4 - Berechnungszeit:    85.401652 s
 west4 - Berechnungszeit:    77.279447 s 
 
 ########## 9 THREADS ##########
