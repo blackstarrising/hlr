@@ -1,0 +1,84 @@
+Anzahl Threads: 1
+Berechnungszeit:    528.750139 s 
+Berechnungszeit:    528.879647 s 
+Berechnungszeit:    537.830328 s 
+Berechnungszeit:    528.776022 s 
+Berechnungszeit:    533.608791 s 
+
+Anzahl Threads: 2
+Berechnungszeit:    280.462864 s 
+Berechnungszeit:    280.505146 s 
+Berechnungszeit:    279.009623 s 
+Berechnungszeit:    278.688095 s 
+Berechnungszeit:    281.293303 s 
+
+Anzahl Threads: 3
+Berechnungszeit:    193.204486 s 
+Berechnungszeit:    192.237128 s 
+Berechnungszeit:    193.186230 s 
+Berechnungszeit:    192.435206 s 
+Berechnungszeit:    192.910122 s 
+
+Anzahl Threads: 4
+Berechnungszeit:    148.724288 s 
+Berechnungszeit:    148.720634 s 
+Berechnungszeit:    149.976695 s 
+Berechnungszeit:    148.532875 s 
+Berechnungszeit:    148.603470 s 
+
+Anzahl Threads: 5
+Berechnungszeit:    120.047809 s 
+Berechnungszeit:    120.479931 s 
+Berechnungszeit:    120.045103 s 
+Berechnungszeit:    120.557979 s 
+Berechnungszeit:    120.110806 s 
+
+Anzahl Threads: 6
+Berechnungszeit:    99.855021 s 
+Berechnungszeit:    100.041568 s 
+Berechnungszeit:    100.744885 s 
+Berechnungszeit:    100.178883 s 
+Berechnungszeit:    99.871476 s 
+
+Anzahl Threads: 7
+Berechnungszeit:    85.283830 s 
+Berechnungszeit:    85.385307 s 
+Berechnungszeit:    85.403038 s 
+Berechnungszeit:    85.603250 s 
+Berechnungszeit:    85.633127 s 
+
+Anzahl Threads: 8
+Berechnungszeit:    74.906690 s 
+Berechnungszeit:    74.748422 s 
+Berechnungszeit:    74.706730 s 
+Berechnungszeit:    74.567992 s 
+Berechnungszeit:    75.323268 s 
+
+Anzahl Threads: 9
+Berechnungszeit:    67.794054 s 
+Berechnungszeit:    67.685704 s 
+Berechnungszeit:    67.708466 s 
+Berechnungszeit:    67.706118 s 
+Berechnungszeit:    67.471699 s 
+
+Anzahl Threads: 10
+Berechnungszeit:    60.884090 s 
+Berechnungszeit:    61.273030 s 
+Berechnungszeit:    61.398062 s 
+Berechnungszeit:    61.541256 s 
+Berechnungszeit:    61.089983 s 
+
+Anzahl Threads: 11
+Berechnungszeit:    56.513221 s 
+Berechnungszeit:    55.663798 s 
+Berechnungszeit:    56.092792 s 
+Berechnungszeit:    55.580393 s 
+Berechnungszeit:    55.708276 s 
+
+Anzahl Threads: 12
+Berechnungszeit:    54.348843 s 
+Berechnungszeit:    52.694485 s 
+Berechnungszeit:    57.559559 s 
+Berechnungszeit:    51.788719 s 
+Berechnungszeit:    56.117338 s 
+
