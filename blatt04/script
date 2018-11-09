@@ -1,8 +1,7 @@
 #!/bin/bash
 
 #SBATCH --partition=west
-#SBATCH -w west10
 #SBATCH -N 1
 #SBATCH --output=dumm.out
 
-srun partdiff 1 2 512 2 2 500 | grep Berechnungszeit >> timemeasurement_$OMP_NUM_THREADS.out
+srun subscript

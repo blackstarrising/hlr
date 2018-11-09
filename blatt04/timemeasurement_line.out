@@ -1,0 +1,77 @@
+Interlines : 1
+west8 - Berechnungszeit: 0.034543 s
+west10 - Berechnungszeit: 0.034581 s
+west9 - Berechnungszeit: 0.037399 s
+west8 - Berechnungszeit: 0.034794 s
+west10 - Berechnungszeit: 0.035000 s
+
+Interlines : 2
+west9 - Berechnungszeit: 0.041989 s
+west8 - Berechnungszeit: 0.045266 s
+west10 - Berechnungszeit: 0.042850 s
+west9 - Berechnungszeit: 0.041890 s
+west10 - Berechnungszeit: 0.043712 s
+
+Interlines : 4
+west8 - Berechnungszeit: 0.072426 s
+west9 - Berechnungszeit: 0.069747 s
+west10 - Berechnungszeit: 0.072219 s
+west8 - Berechnungszeit: 0.071354 s
+west9 - Berechnungszeit: 0.088746 s
+
+Interlines : 8
+west10 - Berechnungszeit: 0.181177 s
+west9 - Berechnungszeit: 0.206385 s
+west8 - Berechnungszeit: 0.234244 s
+west10 - Berechnungszeit: 0.179525 s
+west9 - Berechnungszeit: 0.244760 s
+
+Interlines : 16
+west8 - Berechnungszeit: 0.598561 s
+west10 - Berechnungszeit: 0.564232 s
+west9 - Berechnungszeit: 0.566372 s
+west8 - Berechnungszeit: 0.567076 s
+west10 - Berechnungszeit: 0.714013 s
+
+Interlines : 32
+west9 - Berechnungszeit: 2.130037 s
+west8 - Berechnungszeit: 2.111185 s
+west10 - Berechnungszeit: 2.194899 s
+west9 - Berechnungszeit: 2.188536 s
+west8 - Berechnungszeit: 2.221001 s
+
+Interlines : 64
+west10 - Berechnungszeit: 8.107252 s
+west9 - Berechnungszeit: 8.089487 s
+west8 - Berechnungszeit: 8.031278 s
+west10 - Berechnungszeit: 8.349382 s
+west9 - Berechnungszeit: 8.092254 s
+
+Interlines : 128
+west8 - Berechnungszeit: 46.209439 s
+west10 - Berechnungszeit: 43.119894 s
+west9 - Berechnungszeit: 44.524006 s
+west8 - Berechnungszeit: 42.581209 s
+west10 - Berechnungszeit: 43.668713 s
+
+Interlines : 256
+west9 - Berechnungszeit: 159.499282 s
+west10 - Berechnungszeit: 140.591765 s
+west8 - Berechnungszeit: 150.096726 s
+west9 - Berechnungszeit: 146.653264 s
+west10 - Berechnungszeit: 152.155799 s
+
+Interlines : 512
+west8 - Berechnungszeit: 549.446957 s
+west10 - Berechnungszeit: 537.069854 s
+west9 - Berechnungszeit: 575.822709 s
+west8 - Berechnungszeit: 554.678056 s
+west10 - Berechnungszeit: 516.554205 s
+
+Interlines : 1024
+west9 - Berechnungszeit: 2214.070462 s
+west1 - Berechnungszeit: 2176.559987 s
+west8 - Berechnungszeit: 2218.883076 s
+west3 - Berechnungszeit: 2208.454071 s
+west2 - Berechnungszeit: 2222.307340 s
+
