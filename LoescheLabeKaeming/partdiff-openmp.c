@@ -26,7 +26,8 @@
 #include <math.h>
 #include <malloc.h>
 #include <sys/time.h>
-
+/* Hier fügen wir den omp-header hinzu, um das Programm parallelisieren zu können */
+#include <omp.h>
 #include "partdiff.h"
 
 struct calculation_arguments
@@ -78,7 +79,8 @@ void
 freeMatrices (struct calculation_arguments* arguments)
 {
 	uint64_t i;
-
+	/* Hauptsächlich haben wir alle for-loops parallelisiert */
+	#pragma omp parallel for private(i)
 	for (i = 0; i < arguments->num_matrices; i++)
 	{
 		free(arguments->Matrix[i]);
@@ -121,12 +123,17 @@ allocateMatrices (struct calculation_arguments* arguments)
 	arguments->M = allocateMemory(arguments->num_matrices * (N + 1) * (N + 1) * sizeof(double));
 	arguments->Matrix = allocateMemory(arguments->num_matrices * sizeof(double**));
 
+	/* Hier haben wir jede for-loop einzeln parallelisiert, da wir collapse(2) */
+	/* nicht verwenden konnten, da wir sonst alles in die innere for-loop hätten */
+	/* schreiben müssen und wir dann einen Segfault bekommen hätten */
+	#pragma omp parallel for private(i)
 	for (i = 0; i < arguments->num_matrices; i++)
 	{
 		arguments->Matrix[i] = allocateMemory((N + 1) * sizeof(double*));
-
+		#pragma omp parallel for private(j)
 		for (j = 0; j <= N; j++)
 		{
+
 			arguments->Matrix[i][j] = arguments->M + (i * (N + 1) * (N + 1)) + (j * (N + 1));
 		}
 	}
@@ -146,6 +153,8 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 	double*** Matrix = arguments->Matrix;
 
 	/* initialize matrix/matrices with zeros */
+	/* Hier haben wir mit collapse drei perfekt verschachtelte for-loops parallelisiert */
+	#pragma omp parallel for collapse(3) private(g,i,j) shared(Matrix)
 	for (g = 0; g < arguments->num_matrices; g++)
 	{
 		for (i = 0; i <= N; i++)
@@ -156,10 +165,12 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 			}
 		}
 	}
-
+// export OMP_NUM_THREADS=12
 	/* initialize borders, depending on function (function 2: nothing to do) */
 	if (options->inf_func == FUNC_F0)
 	{
+		/* Parallelisierung von zwei verschachtelten for loops */
+		#pragma omp parallel for collapse(2) private(g,i) shared(Matrix)
 		for (g = 0; g < arguments->num_matrices; g++)
 		{
 			for (i = 0; i <= N; i++)
@@ -168,10 +179,9 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 				Matrix[g][i][N] = h * i;
 				Matrix[g][0][i] = 1.0 - (h * i);
 				Matrix[g][N][i] = h * i;
+				Matrix[g][N][0] = 0.0;
+				Matrix[g][0][N] = 0.0;
 			}
-
-			Matrix[g][N][0] = 0.0;
-			Matrix[g][0][N] = 0.0;
 		}
 	}
 }
@@ -223,18 +233,22 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 		maxresiduum = 0;
 
 		/* over all rows */
+		/* Wichtigste parallelisierung der for loops: durch diese Parallelisierung */
+		/* erhielten wir den größten Zuwachs an Geschwindigkeit */
+		#pragma omp parallel for collapse(2) private(i,j) shared(Matrix_In,Matrix_Out)
 		for (i = 1; i < N; i++)
 		{
-			double fpisin_i = 0.0;
-
-			if (options->inf_func == FUNC_FPISIN)
-			{
-				fpisin_i = fpisin * sin(pih * (double)i);
-			}
-
 			/* over all columns */
 			for (j = 1; j < N; j++)
 			{
+				/* Hier mussten wir den ternären Operator verwenden, um den Ausdruck */
+				/* aus der ersten for loop herauszubekommen (sonst wäre collapse nicht möglich) */
+				double fpisin_i = (j==1) ? 0.0 : fpisin_i;
+				if (options->inf_func == FUNC_FPISIN)
+				{
+					fpisin_i = fpisin * sin(pih * (double)i);
+				}
+
 				star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
 
 				if (options->inf_func == FUNC_FPISIN)
@@ -354,6 +368,7 @@ DisplayMatrix (struct calculation_arguments* arguments, struct calculation_resul
 
 	printf("Matrix:\n");
 
+	//Das parallelisiere ich erstmal nicht weil das nur neun loops macht.
 	for (y = 0; y < 9; y++)
 	{
 		for (x = 0; x < 9; x++)

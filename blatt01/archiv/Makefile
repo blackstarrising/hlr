@@ -1,5 +1,4 @@
-all: map
-all: pointer
+all: map pointer
 
 %.o : gcc -o % %.o
 

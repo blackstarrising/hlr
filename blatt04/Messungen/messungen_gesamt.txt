@@ -1,0 +1,201 @@
+####Thread Messungen#####
+
+Messungen amd3 sequenzielles Programm (512 Interlines 500 Iterationen): 538.63
+Messung west sequenzielles Programm (512 Interlines 500 Iterationen): 267.34
+
+Messung auf amd3:
+
+12  Threads:
+Messungen:  [104.06, 104.33, 104.22, 104.23, 103.79]
+Mittelwert:  1065.144 Standardabweichung:  0.501
+
+11  Threads:
+Messungen:  [113.92, 133.78, 113.62, 113.18, 113.64]
+Mittelwert:  565.334 Standardabweichung:  1.023
+
+10  Threads:
+Messungen:  [124.7, 124.78, 125.02, 124.7, 124.62]
+Mittelwert:  391.808 Standardabweichung:  0.8224451349482345
+
+9  Threads:
+Messungen:  [138.69, 138.29, 138.97, 138.3, 138.08]
+Mittelwert:  304.462 Standardabweichung:  0.618
+
+8  Threads:
+Messungen:  [152.61, 152.37, 153.34, 153.44, 153.08]
+Mittelwert:  245.904 Standardabweichung:  0.446
+
+7  Threads:
+Messungen:  [174.5, 175.07, 175.16, 174.65, 174.34]
+Mittelwert:  204.476 Standardabweichung:  0.462
+
+6  Threads:
+Messungen:  [204.69, 204.9, 203.94, 204.95, 203.9]
+Mittelwert:  174.744 Standardabweichung:  0.319
+
+5  Threads:
+Messungen:  [246.13, 245.47, 245.28, 246.42, 246.22]
+Mittelwert:  152.968 Standardabweichung:  0.414
+
+4  Threads:
+Messungen:  [304.02, 303.71, 304.56, 304.49, 305.53]
+Mittelwert:  138.466 Standardabweichung:  0.319
+
+3  Threads:
+Messungen:  [390.21, 392.42, 392.01, 392.43, 391.97]
+Mittelwert:  124.764 Standardabweichung:  0.137
+
+2  Threads:
+Messungen:  [565.06, 566.75, 564.25, 564.31, 566.3]
+Mittelwert:  117.628 Standardabweichung:  8.07947126982948
+
+1  Thread:
+Messungen:  [1065.67, 1064.92, 1064.56, 1065.81, 1064.76]
+Mittelwert:  104.126 Standardabweichung:  0.188
+
+
+Messung auf West10:
+
+1  Thread:
+Messungen:  [528.750139, 528.879647, 537.830328, 528.776022, 533.608791]
+Mittelwert:  531.568 Standardabweichung:  3.642 
+
+2  Threads:
+Messungen:  [280.462864, 280.505146, 279.009623, 278.688095, 281.293303]
+Mittelwert:  279.992 Standardabweichung:  0.984 
+
+3  Threads:
+Messungen:  [193.204486, 192.237128, 193.18623, 192.435206, 192.910122]
+Mittelwert:  192.794 Standardabweichung:  0.393 
+
+4  Threads:
+Messungen:  [148.724288, 148.720634, 149.976695, 148.532875, 148.60347]
+Mittelwert:  148.911 Standardabweichung:  0.537 
+
+5  Threads:
+Messungen:  [120.047809, 120.479931, 120.045103, 120.557979, 120.110806]
+Mittelwert:  120.248 Standardabweichung:  0.223 
+
+6  Threads:
+Messungen:  [99.855021, 100.041568, 100.744885, 100.178883, 99.871476]
+Mittelwert:  100.138 Standardabweichung:  0.325 
+
+7  Threads:
+Messungen:  [85.28383, 85.385307, 85.403038, 85.60325, 85.633127]
+Mittelwert:  85.461 Standardabweichung:  0.134 
+
+8  Threads:
+Messungen:  [74.90669, 74.748422, 74.70673, 74.567992, 75.323268]
+Mittelwert:  74.850 Standardabweichung:  0.259 
+
+9  Threads:
+Messungen:  [67.794054, 67.685704, 67.708466, 67.706118, 67.471699]
+Mittelwert:  67.673 Standardabweichung:  0.107 
+
+10  Threads:
+Messungen:  [60.88409, 61.27303, 61.398062, 61.541256, 61.089983]
+Mittelwert:  61.237 Standardabweichung:  0.230 
+
+11  Threads:
+Messungen:  [56.513221, 55.663798, 56.092792, 55.580393, 55.708276]
+Mittelwert:  55.911 Standardabweichung:  0.348 
+
+12  Threads:
+Messungen:  [54.348843, 52.694485, 57.559559, 51.788719, 56.117338]
+Mittelwert:  54.501 Standardabweichung:  2.126 
+
+#####Vergleich zwischen Threads#####
+Zeitgewinn amd (Vergleich ein mit 12 Threads):  10.23
+Zeitgewinn west (Vergleich ein mit 12 Threads):  9.75
+
+#####Interline Messungen#####
+Messung auf amd (verschiedene Nodes):
+
+1  interlines:
+Messungen:  [0.035, 0.035, 0.034, 0.038, 0.034]
+Mittelwert:  0.0352 Standardabweichung:  0.0014
+
+2  interlines:
+Messungen:  [0.049, 0.047, 0.045, 0.047, 0.048]
+Mittelwert:  0.0472 Standardabweichung:  0.0013
+
+4  interlines:
+Messungen:  [0.09, 0.088, 0.086, 0.086, 0.089]
+Mittelwert:  0.0878 Standardabweichung:  0.0016
+
+8  interlines:
+Messungen:  [0.23, 0.23, 0.23, 0.23, 0.228]
+Mittelwert:  0.229 Standardabweichung:  0.0008
+
+16  interlines:
+Messungen:  [0.732, 0.733, 0.731, 0.73, 0.729]
+Mittelwert:  0.731 Standardabweichung:  0.0014
+
+32  interlines:
+Messungen:  [2.731, 2.735, 2.73, 2.732, 2.73]
+Mittelwert:  2.731 Standardabweichung:  0.0018
+
+64  interlines:
+Messungen:  [10.434, 10.359, 10.342, 10.342, 10.366]
+Mittelwert:  10.368 Standardabweichung:  0.0340
+
+128  interlines:
+Messungen:  [41.355, 41.338, 41.358, 41.288, 41.315]
+Mittelwert:  41.330 Standardabweichung:  0.02630
+
+256  interlines:
+Messungen:  [166.753, 166.408, 166.951, 166.765, 166.166]
+Mittelwert:  166.608 Standardabweichung:  0.282
+
+512  interlines:
+Messungen:  [661.5, 658.0, 658.433, 657.562, 660.665]
+Mittelwert:  659.232 Standardabweichung:  1.558
+
+1024  interlines:
+Messungen:  [2738.88, 2729.74, 2734.64, 2722.92, 2719.84]
+Mittelwert:  2729.204 Standardabweichung:  7.080
+
+Messung auf west (verschiedene Nodes):
+1  interlines:
+Messungen:  [0.034543, 0.034581, 0.037399, 0.034794, 0.035]
+Mittelwert:  0.035 Standardabweichung:  0.001
+
+2  interlines:
+Messungen:  [0.041989, 0.045266, 0.04285, 0.04189, 0.043712]
+Mittelwert:  0.043 Standardabweichung:  0.0012
+
+4  interlines:
+Messungen:  [0.072426, 0.069747, 0.072219, 0.071354, 0.088746]
+Mittelwert:  0.075 Standardabweichung:  0.007
+
+8  interlines:
+Messungen:  [0.181177, 0.206385, 0.234244, 0.179525, 0.24476]
+Mittelwert:  0.209 Standardabweichung:  0.0267
+
+16  interlines:
+Messungen:  [0.598561, 0.564232, 0.566372, 0.567076, 0.714013]
+Mittelwert:  0.602 Standardabweichung:  0.0574
+
+32  interlines:
+Messungen:  [2.130037, 2.111185, 2.194899, 2.188536, 2.221001]
+Mittelwert:  2.169 Standardabweichung:  0.0415
+
+64  interlines:
+Messungen:  [8.107252, 8.089487, 8.031278, 8.349382, 8.092254]
+Mittelwert:  8.134 Standardabweichung:  0.110
+
+128  interlines:
+Messungen:  [46.209439, 43.119894, 44.524006, 42.581209, 43.668713]
+Mittelwert:  44.020 Standardabweichung:  1.269
+
+256  interlines:
+Messungen:  [159.499282, 140.591765, 150.096726, 146.653264, 152.155799]
+Mittelwert:  149.8 Standardabweichung:  6.235
+
+512  interlines:
+Messungen:  [459.446957, 537.069854, 575.822709, 554.678056, 516.554205]
+Mittelwert:  528.714 Standardabweichung:  39.771
+
+1024  interlines:
+Messungen:  [2214.070462, 2176.559987, 2218.883076, 2208.454071, 2222.30734]
+Mittelwert:  2208.054 Standardabweichung:  16.423

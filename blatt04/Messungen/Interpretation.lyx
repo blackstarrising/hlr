@@ -1,0 +1,264 @@
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language ngerman
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language german
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Section
+Messung 1 - Abhängigkeit der Programmlaufzeit von Threads
+\end_layout
+
+\begin_layout Standard
+Bei der ersten Messungen haben wir untersucht, wie sich die Rechenzeit mit
+ der Anzahl der Threads verhält.
+ Dazu wurden zwei Messreihen aufgenommen.
+ Eine auf der Node amd3 und eine auf der Node west10.
+ Für die Messung wurden jeweils 5 unabhängige Programmläufe gestartet und
+ der arithmetische Mittelwert gebildet.
+ Zu beachten ist die unterschiedliche Architektur der beiden Nodes.
+ Auf der Partition west haben alle Nodes 2 Sockets mit 6 Kernen und 2 Threads
+ pro Kern.
+ Auf der Partition amd haben alle Nodes 2 Sockets mit 12 Kernen und einem
+ Thread (Auslesen der Informationen über sinfo -p partition -o %z).
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename F:/Hochleistungsrechnen/hlr/blatt04/threads_combi.pdf
+	lyxscale 250
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Abhängigkeit-der-Programmlaufzei"
+
+\end_inset
+
+Abhängigkeit der Programmlaufzeit von den verwendeten Threads.
+ Arithmetischer Mittelwerte über jeweils 5 unabhängige Messungen.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In Abbildung 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Abhängigkeit-der-Programmlaufzei"
+
+\end_inset
+
+ sind beide Messreihen dargestellt.
+ Für beide Nodes ist eine exponentielle Abnahme der Rechenzeit bei steigender
+ Anzahl von Threads zu erkennen.
+ Die Node amd3 ist immer langsamer als west10, zeigt aber ab einer Threadanzahl
+ von 8 einen größeren Rechenezeitgewinn.
+ Die zunächst rasche Verkürzung der Rechenzeit bis zu einer Threadanzahl
+ von 6, ist auf die bessere Auslastung der CPU auf der entsprechenden Node
+ zurückzuführen.
+ Ab 6 Threads ist die Minderung der Rechenzeit mit jedem weiteren Thread
+ nicht mehr so groß wie vorher.
+ Der zusätzliche Aufwand des Betriebssystems die Threads zu verwalten steigt
+ mit der Anzahl der Threads und wird zu dem Zeitpunkt zu einem wesentlichen
+ Faktor bezüglich der Rechenzeit.
+ Durch die Verwendung von Threads war eine Verkürzung der Rechenzeit vom
+ Faktor 
+\begin_inset Formula $10,2$
+\end_inset
+
+ auf amd3 und 
+\begin_inset Formula $9,8$
+\end_inset
+
+ auf west10 möglich.
+ Dies liegt etwas unterhalb des theoretisch erwarteten Werts von 12, da
+ nicht der gesamte Code parallelisiert werden kann.
+ Die Architektur der Nodes lässt drauf schließen, dass eine weitere Erhöhung
+ der Threadzahl zu keiner deutlichen Leistungssteigerung mehr führen wird,
+ da bereits alle Kerne beansprucht werden.
+\end_layout
+
+\begin_layout Section
+Messung 2 - Abhängigkeit der Programmlaufzeit von Interlines
+\end_layout
+
+\begin_layout Standard
+Die zweite Messung untersucht die Abhängigkeit der Programmlaufzeit von
+ der Matrixgröße (Interlines).
+ Die Anzahl der Matrixelemente wächst also mit 
+\begin_inset Formula $N^{2}$
+\end_inset
+
+, wenn 
+\begin_inset Formula $N$
+\end_inset
+
+ die Anzahl der Interlines ist.
+ Wir erwarten für eine Vergrößerung der Interlines ein exponentielles Wachstum
+ der Laufzeit bei gleichbleibender Threadanzahl.
+ Bei einer niedrigen Anzahl von Interlines sollte die Laufzeit weniger stark
+ ansteigen, da die Vorbereitung der Datenstrukturen den größten Teil der
+ Berechnung einnimmt und nahezu konstant in der Laufzeit ist.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename F:/Hochleistungsrechnen/hlr/blatt04/interlines_combi.pdf
+	lyxscale 250
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Abhängigkeit-der-Rechenzeit"
+
+\end_inset
+
+Abhängigkeit der Rechenzeit von der Anzahl der Interlines.
+ Arithmetischer Mittelwert über jeweils 5 unabhängige Messungen.
+ Die Nodeauswahl erfolgt durch Slurm auf der entsprechenden Partition.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In Abbildung 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Abhängigkeit-der-Rechenzeit"
+
+\end_inset
+
+ sind zwei Messungen auf unterschiedlichen Partitionen gezeigt.
+ Da der Cluster nach Angaben von sinfo homogen innerhalb der Partitionen
+ ist, haben wir uns entschieden keine Node zu selektieren, da die Jobs dann
+ schneller auf der nächsten freien Node starten.
+ Das vergrößert unseren Fehler, der aber, wie in Abbildung 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Abhängigkeit-der-Rechenzeit"
+
+\end_inset
+
+ zu sehen ist, immer noch sehr klein ist.
+ Unser erwartetes Verhalten bestätigt sich.
+ Bei der Verwendung bis 70 Interlines wächst die Berechnungszeit langsamer
+ als bei größeren Werten.
+ Für Werte ab 100 Interlines ist der Anstieg der Rechenzeit exponentiell.
+ Wie angenommen liegt dies an der Zunahme der benötigten Rechenoperationen.
+ Der zunächst langsamerer Anstieg begründet sich in dem im Verhältnis großen
+ Aufwand des Betriebssystems die Threads zu verwalten.
+\end_layout
+
+\end_body
+\end_document
