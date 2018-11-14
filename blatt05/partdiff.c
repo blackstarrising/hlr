@@ -26,8 +26,11 @@
 #include <math.h>
 #include <malloc.h>
 #include <sys/time.h>
+#include <pthread.h>
 
 #include "partdiff.h"
+
+static int       THREADCOUNT = 12;
 
 struct calculation_arguments
 {
@@ -36,6 +39,7 @@ struct calculation_arguments
 	double    h;              /* length of a space between two lines            */
 	double    ***Matrix;      /* index matrix used for addressing M             */
 	double    *M;             /* two matrices with real values                  */
+        int       threadID;       /* ID of current Thread                           */
 };
 
 struct calculation_results
@@ -64,7 +68,7 @@ initVariables (struct calculation_arguments* arguments, struct calculation_resul
 	arguments->N = (options->interlines * 8) + 9 - 1;
 	arguments->num_matrices = (options->method == METH_JACOBI) ? 2 : 1;
 	arguments->h = 1.0 / arguments->N;
-
+	
 	results->m = 0;
 	results->stat_iteration = 0;
 	results->stat_precision = 0;
@@ -78,14 +82,14 @@ void
 freeMatrices (struct calculation_arguments* arguments)
 {
 	uint64_t i;
-
 	for (i = 0; i < arguments->num_matrices; i++)
 	{
-		free(arguments->Matrix[i]);
+	  free(arguments->Matrix[i]);
 	}
 
 	free(arguments->Matrix);
 	free(arguments->M);
+
 }
 
 /* ************************************************************************ */
@@ -176,6 +180,36 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 	}
 }
 
+
+static
+void
+calculateStep (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options, int i, int j, double** Matrix_In, double** Matrix_Out, double pih, double fpisin, int* term_iteration_ptr, double* maxresiduum_ptr)
+{
+  double star;                                /* four times center value minus 4 neigh.b values */
+  double residuum;                            /* residuum of current iteration */
+  double fpisin_i = 0.0;
+
+  if (options->inf_func == FUNC_FPISIN)
+    {
+      fpisin_i = fpisin * sin(pih * (double)i);
+    }
+  
+  star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
+  if (options->inf_func == FUNC_FPISIN)
+    {
+      star += fpisin_i * sin(pih * (double)j);
+    }
+  
+  if (options->termination == TERM_PREC || *term_iteration_ptr == 1)
+    {
+      residuum = Matrix_In[i][j] - star;
+      residuum = (residuum < 0) ? -residuum : residuum;
+      *maxresiduum_ptr = (residuum < *maxresiduum_ptr) ? *maxresiduum_ptr : residuum;
+    }
+  
+  Matrix_Out[i][j] = star;
+}
+
 /* ************************************************************************ */
 /* calculate: solves the equation                                           */
 /* ************************************************************************ */
@@ -185,8 +219,6 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 {
 	int i, j;                                   /* local variables for loops */
 	int m1, m2;                                 /* used as indices for old and new matrices */
-	double star;                                /* four times center value minus 4 neigh.b values */
-	double residuum;                            /* residuum of current iteration */
 	double maxresiduum;                         /* maximum residuum value of a slave in iteration */
 
 	int const N = arguments->N;
@@ -215,6 +247,7 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 		fpisin = 0.25 * TWO_PI_SQUARE * h * h;
 	}
 
+	//Abbruchbedingung muss mit Mutex sinnvoll implementiert werden
 	while (term_iteration > 0)
 	{
 		double** Matrix_Out = arguments->Matrix[m1];
@@ -222,34 +255,21 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 
 		maxresiduum = 0;
 
+		//TODO Begin Threads
+
+		//Make Thread Array
+		//Spawn N Threads
+		//Set ThreadManager to next free combination of i and j
+		//... -> Inside Thread: wenn fertig, frage ThreadManager ob was frei ist. Wenn ja -> nehme neue Kombo und mache nochmal. Wenn -1 -1 -> wart (spawn noch nicht abgeschlossen). Wenn -2 -2 -> Ende, weiter zum Join
+		//Join threads together
+		
 		/* over all rows */
 		for (i = 1; i < N; i++)
 		{
-			double fpisin_i = 0.0;
-
-			if (options->inf_func == FUNC_FPISIN)
-			{
-				fpisin_i = fpisin * sin(pih * (double)i);
-			}
-
 			/* over all columns */
 			for (j = 1; j < N; j++)
 			{
-				star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
-
-				if (options->inf_func == FUNC_FPISIN)
-				{
-					star += fpisin_i * sin(pih * (double)j);
-				}
-
-				if (options->termination == TERM_PREC || term_iteration == 1)
-				{
-					residuum = Matrix_In[i][j] - star;
-					residuum = (residuum < 0) ? -residuum : residuum;
-					maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
-				}
-
-				Matrix_Out[i][j] = star;
+			  calculateStep(arguments, results, options, i, j, Matrix_In, Matrix_Out, pih, fpisin, &term_iteration, &maxresiduum);
 			}
 		}
 
@@ -377,6 +397,8 @@ main (int argc, char** argv)
 	struct calculation_arguments arguments;
 	struct calculation_results results;
 
+	pthread_t threads[THREADCOUNT];
+
 	AskParams(&options, argc, argv);
 
 	initVariables(&arguments, &results, &options);
@@ -385,7 +407,9 @@ main (int argc, char** argv)
 	initMatrices(&arguments, &options);
 
 	gettimeofday(&start_time, NULL);
+
 	calculate(&arguments, &results, &options);
+
 	gettimeofday(&comp_time, NULL);
 
 	displayStatistics(&arguments, &results, &options);
