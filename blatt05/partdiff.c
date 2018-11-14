@@ -54,7 +54,6 @@ struct steparguments {
 
   struct options const* step_options;
   struct calculation_arguments const* step_arguments;
-  struct calculation_results* step_results;
   int step_i;
   int step_j;
   double** step_Matrix_In;
@@ -302,9 +301,8 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 		  {
 		    //set the new arguments
 		    struct steparguments stepargs;			  
-		    stepargs.step_options=&options;
+		    stepargs.step_options=options;
 		    stepargs.step_arguments=arguments;
-		    stepargs.step_results=results;
 		    stepargs.step_i = i;
 		    stepargs.step_j = j;
 		    stepargs.step_Matrix_In = Matrix_In;
@@ -329,9 +327,6 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 			}//Catches the case that N² < THREADCOUNT
 		      }
 		  }
-
-		//... -> Inside Thread: wenn fertig, frage ThreadManager ob was frei ist. Wenn ja -> nehme neue Kombo und mache nochmal. Wenn -1 -1 -> wart (spawn noch nicht abgeschlossen). Wenn -2 -2 -> Ende, weiter zum Join
-		//Join threads together
 
 		for (int t = 0; t < THREADCOUNT; t++)
 		  {
