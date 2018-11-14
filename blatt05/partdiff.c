@@ -49,6 +49,22 @@ struct calculation_results
 	double    stat_precision; /* actual precision of all slaves in iteration    */
 };
 
+struct steparguments {
+
+  struct options const* step_options;
+  struct calculation_arguments const* step_arguments;
+  struct calculation_results* step_results;
+  int step_i;
+  int step_j;
+  double** step_Matrix_In;
+  double** step_Matrix_Out;
+  double step_pih;
+  double step_fpisin;
+  int* term_iteration_ptr;
+  double* maxresiduum_ptr;
+};
+
+
 /* ************************************************************************ */
 /* Global variables                                                         */
 /* ************************************************************************ */
@@ -183,31 +199,31 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 
 static
 void
-calculateStep (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options, int i, int j, double** Matrix_In, double** Matrix_Out, double pih, double fpisin, int* term_iteration_ptr, double* maxresiduum_ptr)
+calculateStep (struct steparguments stepargs)
 {
   double star;                                /* four times center value minus 4 neigh.b values */
   double residuum;                            /* residuum of current iteration */
   double fpisin_i = 0.0;
 
-  if (options->inf_func == FUNC_FPISIN)
+  if (stepargs.step_options->inf_func == FUNC_FPISIN)
     {
-      fpisin_i = fpisin * sin(pih * (double)i);
+      fpisin_i = stepargs.step_fpisin * sin(stepargs.step_pih * (double)stepargs.step_i);
     }
   
-  star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
-  if (options->inf_func == FUNC_FPISIN)
+  star = 0.25 * (stepargs.step_Matrix_In[stepargs.step_i-1][stepargs.step_j] + stepargs.step_Matrix_In[stepargs.step_i][stepargs.step_j-1] + stepargs.step_Matrix_In[stepargs.step_i][stepargs.step_j+1] + stepargs.step_Matrix_In[stepargs.step_i+1][stepargs.step_j]);
+  if (stepargs.step_options->inf_func == FUNC_FPISIN)
     {
-      star += fpisin_i * sin(pih * (double)j);
+      star += fpisin_i * sin(stepargs.step_pih * (double)stepargs.step_j);
     }
   
-  if (options->termination == TERM_PREC || *term_iteration_ptr == 1)
+  if (stepargs.step_options->termination == TERM_PREC || *(stepargs.term_iteration_ptr) == 1)
     {
-      residuum = Matrix_In[i][j] - star;
+      residuum = stepargs.step_Matrix_In[stepargs.step_i][stepargs.step_j] - star;
       residuum = (residuum < 0) ? -residuum : residuum;
-      *maxresiduum_ptr = (residuum < *maxresiduum_ptr) ? *maxresiduum_ptr : residuum;
+      *(stepargs.maxresiduum_ptr) = (residuum < *(stepargs.maxresiduum_ptr)) ? *(stepargs.maxresiduum_ptr) : residuum;
     }
   
-  Matrix_Out[i][j] = star;
+  stepargs.step_Matrix_Out[stepargs.step_i][stepargs.step_j] = star;
 }
 
 /* ************************************************************************ */
@@ -262,6 +278,8 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 		//Set ThreadManager to next free combination of i and j
 		//... -> Inside Thread: wenn fertig, frage ThreadManager ob was frei ist. Wenn ja -> nehme neue Kombo und mache nochmal. Wenn -1 -1 -> wart (spawn noch nicht abgeschlossen). Wenn -2 -2 -> Ende, weiter zum Join
 		//Join threads together
+
+
 		
 		/* over all rows */
 		for (i = 1; i < N; i++)
@@ -269,7 +287,21 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 			/* over all columns */
 			for (j = 1; j < N; j++)
 			{
-			  calculateStep(arguments, results, options, i, j, Matrix_In, Matrix_Out, pih, fpisin, &term_iteration, &maxresiduum);
+			  struct steparguments stepargs;
+			  
+			  stepargs.step_options=options;
+			  stepargs.step_arguments=arguments;
+			  stepargs.step_results=results;
+			  stepargs.step_i = i;
+			  stepargs.step_j = j;
+			  stepargs.step_Matrix_In = Matrix_In;
+			  stepargs.step_Matrix_Out = Matrix_Out;
+			  stepargs.step_pih = pih;
+			  stepargs.step_fpisin = fpisin;
+			  stepargs.term_iteration_ptr = &term_iteration;
+			  stepargs.maxresiduum_ptr = &maxresiduum;
+			  
+			  calculateStep(stepargs);
 			}
 		}
 
@@ -396,8 +428,6 @@ main (int argc, char** argv)
 	struct options options;
 	struct calculation_arguments arguments;
 	struct calculation_results results;
-
-	pthread_t threads[THREADCOUNT];
 
 	AskParams(&options, argc, argv);
 
