@@ -31,6 +31,7 @@
 #include "partdiff.h"
 
 static int       THREADCOUNT = 12;
+pthread_mutex_t mutex_ij;
 
 struct calculation_arguments
 {
@@ -62,6 +63,9 @@ struct steparguments {
   double step_fpisin;
   int* term_iteration_ptr;
   double* maxresiduum_ptr;
+  int* i_ptr;
+  int* j_ptr;
+  int* term_subiteration_ptr;
 };
 
 
@@ -205,7 +209,7 @@ calculateStep (struct steparguments stepargs)
   double residuum;                            /* residuum of current iteration */
   double fpisin_i = 0.0;
 
-  if (stepargs.step_options->inf_func == FUNC_FPISIN)
+  if ((stepargs.step_options)->inf_func == FUNC_FPISIN)
     {
       fpisin_i = stepargs.step_fpisin * sin(stepargs.step_pih * (double)stepargs.step_i);
     }
@@ -224,7 +228,25 @@ calculateStep (struct steparguments stepargs)
     }
   
   stepargs.step_Matrix_Out[stepargs.step_i][stepargs.step_j] = star;
-}
+
+  //Look whether there is more work to do, if so: continue!
+  pthread_mutex_lock(&mutex_ij);
+  if(*(stepargs.term_subiteration_ptr) == 1)
+    {
+      stepargs.step_i=*(stepargs.i_ptr);
+      stepargs.step_j=*(stepargs.j_ptr);
+      *(stepargs.i_ptr)++;
+      if(*(stepargs.j_ptr) == stepargs.step_arguments->N)
+	{
+	  *(stepargs.j_ptr) = 1;
+	  *(stepargs.i_ptr)++;
+	  if(*(stepargs.i_ptr) == stepargs.step_arguments->N){*(stepargs.term_subiteration_ptr) = 0;}
+	}
+      pthread_mutex_unlock(&mutex_ij);
+      calculateStep(stepargs);
+    }
+  else{pthread_mutex_unlock(&mutex_ij);}
+  }
 
 /* ************************************************************************ */
 /* calculate: solves the equation                                           */
@@ -233,7 +255,7 @@ static
 void
 calculate (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options)
 {
-	int i, j;                                   /* local variables for loops */
+	static int i, j;                                   /* local variables for loops */
 	int m1, m2;                                 /* used as indices for old and new matrices */
 	double maxresiduum;                         /* maximum residuum value of a slave in iteration */
 
@@ -244,6 +266,7 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 	double fpisin = 0.0;
 
 	int term_iteration = options->term_iteration;
+	static int term_subiteration = 1;
 
 	/* initialize m1 and m2 depending on algorithm */
 	if (options->method == METH_JACOBI)
@@ -271,40 +294,50 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 
 		maxresiduum = 0;
 
-		//TODO Begin Threads
-
-		//Make Thread Array
+		pthread_t threads[THREADCOUNT];
 		//Spawn N Threads
-		//Set ThreadManager to next free combination of i and j
+		i = 1;
+		j = 1;
+		for (int t = 0; t < THREADCOUNT; t++)
+		  {
+		    //set the new arguments
+		    struct steparguments stepargs;			  
+		    stepargs.step_options=&options;
+		    stepargs.step_arguments=arguments;
+		    stepargs.step_results=results;
+		    stepargs.step_i = i;
+		    stepargs.step_j = j;
+		    stepargs.step_Matrix_In = Matrix_In;
+		    stepargs.step_Matrix_Out = Matrix_Out;
+		    stepargs.step_pih = pih;
+		    stepargs.step_fpisin = fpisin;
+		    stepargs.term_iteration_ptr = &term_iteration;
+		    stepargs.maxresiduum_ptr = &maxresiduum;
+		    stepargs.i_ptr = &i;
+		    stepargs.j_ptr = &j;
+		    stepargs.term_subiteration_ptr = &term_subiteration;
+      
+		    pthread_create(&threads[t], NULL, calculateStep, &stepargs);
+		    j++;
+		    if(j == N)
+		      {
+			j = 1;
+			i++;
+			if(i == N){
+			  term_subiteration = 0;
+			  break;
+			}//Catches the case that N² < THREADCOUNT
+		      }
+		  }
+
 		//... -> Inside Thread: wenn fertig, frage ThreadManager ob was frei ist. Wenn ja -> nehme neue Kombo und mache nochmal. Wenn -1 -1 -> wart (spawn noch nicht abgeschlossen). Wenn -2 -2 -> Ende, weiter zum Join
 		//Join threads together
 
-
+		for (int t = 0; t < THREADCOUNT; t++)
+		  {
+		    pthread_join(threads[t], NULL);
+		  }
 		
-		/* over all rows */
-		for (i = 1; i < N; i++)
-		{
-			/* over all columns */
-			for (j = 1; j < N; j++)
-			{
-			  struct steparguments stepargs;
-			  
-			  stepargs.step_options=options;
-			  stepargs.step_arguments=arguments;
-			  stepargs.step_results=results;
-			  stepargs.step_i = i;
-			  stepargs.step_j = j;
-			  stepargs.step_Matrix_In = Matrix_In;
-			  stepargs.step_Matrix_Out = Matrix_Out;
-			  stepargs.step_pih = pih;
-			  stepargs.step_fpisin = fpisin;
-			  stepargs.term_iteration_ptr = &term_iteration;
-			  stepargs.maxresiduum_ptr = &maxresiduum;
-			  
-			  calculateStep(stepargs);
-			}
-		}
-
 		results->stat_iteration++;
 		results->stat_precision = maxresiduum;
 
@@ -428,7 +461,8 @@ main (int argc, char** argv)
 	struct options options;
 	struct calculation_arguments arguments;
 	struct calculation_results results;
-
+	pthread_mutex_init(&mutex_ij, NULL);//Init des Mutex
+	
 	AskParams(&options, argc, argv);
 
 	initVariables(&arguments, &results, &options);
@@ -447,5 +481,7 @@ main (int argc, char** argv)
 
 	freeMatrices(&arguments);
 
+	pthread_mutex_destroy(&mutex_ij);
+	
 	return 0;
 }
