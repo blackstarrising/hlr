@@ -297,6 +297,7 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 		//Spawn N Threads
 		i = 1;
 		j = 1;
+		pthread_mutex_lock(&mutex_ij);
 		for (int t = 0; t < THREADCOUNT; t++)
 		  {
 		    //set the new arguments
@@ -327,7 +328,7 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 			}//Catches the case that N² < THREADCOUNT
 		      }
 		  }
-
+		pthread_mutex_unlock(&mutex_ij);
 		for (int t = 0; t < THREADCOUNT; t++)
 		  {
 		    pthread_join(threads[t], NULL);
