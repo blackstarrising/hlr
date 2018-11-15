@@ -317,7 +317,7 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
       
 		    pthread_create(&threads[t], NULL, calculateStep, &stepargs);
 		    j++;
-		    if(j == N)
+		    if((j == N)&&(term_subiteration == 1)) //Hier änderung um zu verhinderndss fertig threads unnötig rumändern
 		      {
 			j = 1;
 			i++;
