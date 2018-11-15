@@ -57,6 +57,12 @@ struct calculation_results
 struct timeval start_time;       /* time when program started                      */
 struct timeval comp_time;        /* time when calculation completed                */
 
+struct options options;
+struct calculation_arguments arguments;
+struct calculation_results results;
+
+static int term_subiteration;
+static int* ptr_subiteration = &term_subiteration;
 
 /* ************************************************************************ */
 /* initVariables: Initializes some global variables                         */
@@ -185,6 +191,9 @@ static
 void
 calculateStep (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options, int i, int j, double** Matrix_In, double** Matrix_Out, double pih, double fpisin, int* term_iteration_ptr, double* maxresiduum_ptr)
 {
+  //KACKE
+  printf("Das ist alles dumm!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! %f \n", *ptr_subiteration);
+  
   double star;                                /* four times center value minus 4 neigh.b values */
   double residuum;                            /* residuum of current iteration */
   double fpisin_i = 0.0;
@@ -208,6 +217,18 @@ calculateStep (struct calculation_arguments const* arguments, struct calculation
     }
   
   Matrix_Out[i][j] = star;
+
+  if(term_subiteration == 1)
+    {
+      j++;
+      if(j == arguments->N)
+	{
+	  j = 1;
+	  i++;
+	  if(i == arguments->N){term_subiteration = 0;}
+	}
+      //calculateStep(arguments, results, options, i, j, Matrix_In, Matrix_Out, pih, fpisin, term_iteration_ptr, maxresiduum_ptr);
+    }
 }
 
 /* ************************************************************************ */
@@ -217,18 +238,19 @@ static
 void
 calculate (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options)
 {
-	int i, j;                                   /* local variables for loops */
 	int m1, m2;                                 /* used as indices for old and new matrices */
 	double maxresiduum;                         /* maximum residuum value of a slave in iteration */
 
-	int const N = arguments->N;
 	double const h = arguments->h;
 
 	double pih = 0.0;
 	double fpisin = 0.0;
 
 	int term_iteration = options->term_iteration;
-
+	//KACKE
+	*ptr_subiteration = 1;
+	printf("Hier ist noch gut oder? %d \n", *ptr_subiteration);
+	
 	/* initialize m1 and m2 depending on algorithm */
 	if (options->method == METH_JACOBI)
 	{
@@ -262,24 +284,17 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 		//Set ThreadManager to next free combination of i and j
 		//... -> Inside Thread: wenn fertig, frage ThreadManager ob was frei ist. Wenn ja -> nehme neue Kombo und mache nochmal. Wenn -1 -1 -> wart (spawn noch nicht abgeschlossen). Wenn -2 -2 -> Ende, weiter zum Join
 		//Join threads together
-		
-		/* over all rows */
-		for (i = 1; i < N; i++)
-		{
-			/* over all columns */
-			for (j = 1; j < N; j++)
-			{
-			  calculateStep(arguments, results, options, i, j, Matrix_In, Matrix_Out, pih, fpisin, &term_iteration, &maxresiduum);
-			}
-		}
+
+		//KACKE
+		calculateStep(arguments, results, options, 1, 1, Matrix_In, Matrix_Out, pih, fpisin, &term_iteration, &maxresiduum);
 
 		results->stat_iteration++;
 		results->stat_precision = maxresiduum;
 
 		/* exchange m1 and m2 */
-		i = m1;
+		int ex = m1;
 		m1 = m2;
-		m2 = i;
+		m2 = ex;
 
 		/* check for stopping calculation depending on termination method */
 		if (options->termination == TERM_PREC)
@@ -393,29 +408,25 @@ DisplayMatrix (struct calculation_arguments* arguments, struct calculation_resul
 int
 main (int argc, char** argv)
 {
-	struct options options;
-	struct calculation_arguments arguments;
-	struct calculation_results results;
+  //pthread_t threads[THREADCOUNT];
 
-	pthread_t threads[THREADCOUNT];
+  AskParams(&options, argc, argv);
 
-	AskParams(&options, argc, argv);
+  initVariables(&arguments, &results, &options);
 
-	initVariables(&arguments, &results, &options);
+  allocateMatrices(&arguments);
+  initMatrices(&arguments, &options);
 
-	allocateMatrices(&arguments);
-	initMatrices(&arguments, &options);
+  gettimeofday(&start_time, NULL);
 
-	gettimeofday(&start_time, NULL);
+  calculate(&arguments, &results, &options);
 
-	calculate(&arguments, &results, &options);
+  gettimeofday(&comp_time, NULL);
 
-	gettimeofday(&comp_time, NULL);
+  displayStatistics(&arguments, &results, &options);
+  DisplayMatrix(&arguments, &results, &options);
 
-	displayStatistics(&arguments, &results, &options);
-	DisplayMatrix(&arguments, &results, &options);
+  freeMatrices(&arguments);
 
-	freeMatrices(&arguments);
-
-	return 0;
+  return 0;
 }
