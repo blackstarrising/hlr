@@ -258,13 +258,13 @@ calculate_step(void* pars)
 		}
 
 		my_output[start_i][start_j] = star;
-		// @EDIT Wenn dieses Element berechnet ist, geht der thread mit der Schrittgröße
-		// der Anzahl an threads weiter durch die Matrix. Sollte der Fall eintreten, dass
-		// der Thread die Zeile überschreitet, werden die i und j-Werte wieder angepasst (wie oben)
+		// @EDIT Wenn dieses Element berechnet ist, geht der thread um eins weiter.
+	  // Falls wir am Ende einer Zeile angekommen sind, starten wir wieder bei 1
+		// und erhöhen j auch um 1.
 		start_i += 1;
-		while(num_elements < start_i)
+		if(start_i > num_elements)
 		{
-			start_i = start_i - num_elements;
+			start_i = 1;
 			start_j += 1;
 		}
 	}
