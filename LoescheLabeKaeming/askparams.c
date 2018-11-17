@@ -79,7 +79,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <string.h>
-/* Hinweis: diese Datei wurde nicht parallelisiert. Nur partdiff.c */
+
 #include "partdiff.h"
 
 static

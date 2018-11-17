@@ -213,7 +213,7 @@ calculate_step(void* pars)
 	double** my_output = mypars->output;
 	double my_res = 0.0;
 	double my_maxres = 0.0;
-	int start_i = my_id;
+	int start_i = ((my_id-1)*num_iterations)+1;
 	int start_j = 1;
 	int my_iter = num_iterations;
 	double star;
@@ -221,7 +221,13 @@ calculate_step(void* pars)
 	if(my_id <= num_rest)
 	{
 		my_iter += 1;
+		start_i += my_id -1;
 	}
+	else
+	{
+		start_i += num_rest;
+	}
+
 	// @EDIT Hier wird der Fall abgefangen, dass es mehr threads geben kann,
 	// als Elemente in der Zeile sind. Dann muss das i angepasst werden und
 	// j muss entsprechend erhöht werden.
@@ -255,7 +261,7 @@ calculate_step(void* pars)
 		// @EDIT Wenn dieses Element berechnet ist, geht der thread mit der Schrittgröße
 		// der Anzahl an threads weiter durch die Matrix. Sollte der Fall eintreten, dass
 		// der Thread die Zeile überschreitet, werden die i und j-Werte wieder angepasst (wie oben)
-		start_i += NTHREADS;
+		start_i += 1;
 		while(num_elements < start_i)
 		{
 			start_i = start_i - num_elements;
@@ -309,7 +315,6 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 	{
 		double** Matrix_Out = arguments->Matrix[m1];
 		double** Matrix_In  = arguments->Matrix[m2];
-
 		maxresiduum = 0.0;
 		// @EDIT Hier definieren wir unsere pthreads und erzeugen außerdem ein
 		// joinable Attribut.

@@ -18,7 +18,7 @@
 /* Include standard header file.                                            */
 /* ************************************************************************ */
 #define _POSIX_C_SOURCE 200809L
-
+#define NTHREADS 12
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -26,8 +26,7 @@
 #include <math.h>
 #include <malloc.h>
 #include <sys/time.h>
-/* Hier fügen wir den omp-header hinzu, um das Programm parallelisieren zu können */
-#include <omp.h>
+#include <pthread.h>
 #include "partdiff.h"
 
 struct calculation_arguments
@@ -46,6 +45,18 @@ struct calculation_results
 	double    stat_precision; /* actual precision of all slaves in iteration    */
 };
 
+// @EDIT Dieses Struct enthält alle relevanten Daten für den Thread
+struct step_params
+{
+	uint64_t 	threadid;
+	double		**input;
+	double		**output;
+	uint64_t 	pars_term_iter;
+	uint64_t 	pars_inf_func;
+	uint64_t 	pars_termination;
+
+};
+
 /* ************************************************************************ */
 /* Global variables                                                         */
 /* ************************************************************************ */
@@ -53,7 +64,20 @@ struct calculation_results
 /* time measurement variables */
 struct timeval start_time;       /* time when program started                      */
 struct timeval comp_time;        /* time when calculation completed                */
-
+// @EDIT Für unsere Thread-Funktion müssen wir einige zusätzliche globale
+// variablen definieren
+// @EDIT Anzahl Iterationen, die EIN thread machen muss:
+int num_iterations;
+// @EDIT: Da nicht alle Threads immer perfekt aufgeteilt werden können,
+// müssen einige evtl eine Iteration mehr machen:
+int num_rest;
+// @EDIT Anzahl Elemente pro Zeile:
+int num_elements;
+// @EDIT Das ist ein Array, wo jeder Thread das maximale residuum der von ihm
+// bearbeiteten Elemente hereinschreibt (damit sparen wir uns ein mutex):
+static double maxres[NTHREADS];
+double pih;
+double fpisin;
 
 /* ************************************************************************ */
 /* initVariables: Initializes some global variables                         */
@@ -79,8 +103,7 @@ void
 freeMatrices (struct calculation_arguments* arguments)
 {
 	uint64_t i;
-	/* Hauptsächlich haben wir alle for-loops parallelisiert */
-	#pragma omp parallel for private(i)
+
 	for (i = 0; i < arguments->num_matrices; i++)
 	{
 		free(arguments->Matrix[i]);
@@ -123,17 +146,12 @@ allocateMatrices (struct calculation_arguments* arguments)
 	arguments->M = allocateMemory(arguments->num_matrices * (N + 1) * (N + 1) * sizeof(double));
 	arguments->Matrix = allocateMemory(arguments->num_matrices * sizeof(double**));
 
-	/* Hier haben wir jede for-loop einzeln parallelisiert, da wir collapse(2) */
-	/* nicht verwenden konnten, da wir sonst alles in die innere for-loop hätten */
-	/* schreiben müssen und wir dann einen Segfault bekommen hätten */
-	#pragma omp parallel for private(i)
 	for (i = 0; i < arguments->num_matrices; i++)
 	{
 		arguments->Matrix[i] = allocateMemory((N + 1) * sizeof(double*));
-		#pragma omp parallel for private(j)
+
 		for (j = 0; j <= N; j++)
 		{
-
 			arguments->Matrix[i][j] = arguments->M + (i * (N + 1) * (N + 1)) + (j * (N + 1));
 		}
 	}
@@ -153,8 +171,6 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 	double*** Matrix = arguments->Matrix;
 
 	/* initialize matrix/matrices with zeros */
-	/* Hier haben wir mit collapse drei perfekt verschachtelte for-loops parallelisiert */
-	#pragma omp parallel for collapse(3) private(g,i,j) shared(Matrix)
 	for (g = 0; g < arguments->num_matrices; g++)
 	{
 		for (i = 0; i <= N; i++)
@@ -165,12 +181,10 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 			}
 		}
 	}
-// export OMP_NUM_THREADS=12
+
 	/* initialize borders, depending on function (function 2: nothing to do) */
 	if (options->inf_func == FUNC_F0)
 	{
-		/* Parallelisierung von zwei verschachtelten for loops */
-		#pragma omp parallel for collapse(2) private(g,i) shared(Matrix)
 		for (g = 0; g < arguments->num_matrices; g++)
 		{
 			for (i = 0; i <= N; i++)
@@ -179,11 +193,84 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 				Matrix[g][i][N] = h * i;
 				Matrix[g][0][i] = 1.0 - (h * i);
 				Matrix[g][N][i] = h * i;
-				Matrix[g][N][0] = 0.0;
-				Matrix[g][0][N] = 0.0;
 			}
+
+			Matrix[g][N][0] = 0.0;
+			Matrix[g][0][N] = 0.0;
 		}
 	}
+}
+
+
+void *
+calculate_step(void* pars)
+{
+	// @EDIT Zunächst legen wir einige Startparameter fest
+	struct step_params* mypars;
+	mypars = (struct step_params*) pars;
+	int my_id = mypars->threadid;
+	double** my_input = mypars->input;
+	double** my_output = mypars->output;
+	double my_res = 0.0;
+	double my_maxres = 0.0;
+	int start_i = ((my_id-1)*num_iterations)+1;
+	int start_j = 1;
+	int my_iter = num_iterations;
+	double star;
+	//@EDIT Definiere ob dieser Thread eine Iteration mehr machen muss
+	if(my_id <= num_rest)
+	{
+		my_iter += 1;
+		start_i += my_id -1;
+	}
+	else
+	{
+		start_i += num_rest;
+	}
+
+	// @EDIT Hier wird der Fall abgefangen, dass es mehr threads geben kann,
+	// als Elemente in der Zeile sind. Dann muss das i angepasst werden und
+	// j muss entsprechend erhöht werden.
+	while (num_elements < start_i)
+	{
+		start_i = start_i - num_elements;
+		start_j += 1;
+	}
+	// @EDIT Das ist nun die kopierte for-loop aus dem Sequenziellen Programm;
+	// natürlich sind einige Parameternamen angepasst worden.
+	for (int count = 0; count < my_iter; count++)
+	{
+		double fpisin_i = 0.0;
+
+		star = 0.25 * (my_input[start_i-1][start_j] + my_input[start_i][start_j-1] + my_input[start_i][start_j+1] + my_input[start_i+1][start_j]);
+
+		if (mypars->pars_inf_func == FUNC_FPISIN)
+		{
+			fpisin_i = fpisin * sin(pih * (double)start_i);
+			star += fpisin_i * sin(pih * (double)start_j);
+		}
+
+		if (mypars->pars_termination == TERM_PREC || mypars->pars_term_iter == 1)
+		{
+			my_res = my_input[start_i][start_j] - star;
+			my_res = (my_res < 0) ? -my_res : my_res;
+			my_maxres = (my_res < my_maxres) ? my_maxres : my_res;
+		}
+
+		my_output[start_i][start_j] = star;
+		// @EDIT Wenn dieses Element berechnet ist, geht der thread mit der Schrittgröße
+		// der Anzahl an threads weiter durch die Matrix. Sollte der Fall eintreten, dass
+		// der Thread die Zeile überschreitet, werden die i und j-Werte wieder angepasst (wie oben)
+		start_i += 1;
+		while(num_elements < start_i)
+		{
+			start_i = start_i - num_elements;
+			start_j += 1;
+		}
+	}
+	// @EDIT Das maximale Residuum dieses threads wird in den entspechenden Teil
+	// des globalen maxres arrays geschrieben
+	maxres[my_id-1] = my_maxres;
 }
 
 /* ************************************************************************ */
@@ -193,17 +280,16 @@ static
 void
 calculate (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options)
 {
-	int i, j;                                   /* local variables for loops */
+	// @EDIT p brauchen wir später nur um die Matrizen zu tauschen.
+	int p;
 	int m1, m2;                                 /* used as indices for old and new matrices */
-	double star;                                /* four times center value minus 4 neigh.b values */
-	double residuum;                            /* residuum of current iteration */
-	double maxresiduum;                         /* maximum residuum value of a slave in iteration */
+	static double maxresiduum;                         /* maximum residuum value of a slave in iteration */
 
 	int const N = arguments->N;
 	double const h = arguments->h;
 
-	double pih = 0.0;
-	double fpisin = 0.0;
+	pih = 0.0;
+	fpisin = 0.0;
 
 	int term_iteration = options->term_iteration;
 
@@ -229,51 +315,60 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 	{
 		double** Matrix_Out = arguments->Matrix[m1];
 		double** Matrix_In  = arguments->Matrix[m2];
+		maxresiduum = 0.0;
+		// @EDIT Hier definieren wir unsere pthreads und erzeugen außerdem ein
+		// joinable Attribut.
+		pthread_t threads[NTHREADS];
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+   	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+		void* status;
+		// @EDIT In diesem Array sind die structs mit den Daten für die Threads
+		struct step_params data_array[NTHREADS];
 
-		maxresiduum = 0;
+		// @EDIT Sollten die Interlines nicht durch die Thread-Zahl teilbar sein,
+		// müssen später einige threads ein Element mehr als andere Threads
+		// ausrechnen
+		num_rest = ((N-1)*(N-1))%NTHREADS;
+		// @EDIT So viele Iterationen macht ein Thread (plus evtl eine mehr)
+		num_iterations = (((N-1)*(N-1))-num_rest)/NTHREADS;
+		num_elements = N-1;
 
-		/* over all rows */
-		/* Wichtigste parallelisierung der for loops: durch diese Parallelisierung */
-		/* erhielten wir den größten Zuwachs an Geschwindigkeit */
-		#pragma omp parallel for collapse(2) private(i,j) shared(Matrix_In,Matrix_Out)
-		for (i = 1; i < N; i++)
+		for (int k = 0; k < NTHREADS; k++)
 		{
-			/* over all columns */
-			for (j = 1; j < N; j++)
-			{
-				/* Hier mussten wir den ternären Operator verwenden, um den Ausdruck */
-				/* aus der ersten for loop herauszubekommen (sonst wäre collapse nicht möglich) */
-				double fpisin_i = (j==1) ? 0.0 : fpisin_i;
-				if (options->inf_func == FUNC_FPISIN)
-				{
-					fpisin_i = fpisin * sin(pih * (double)i);
-				}
+			// @EDIT Hier legen wir für jeden Struct die Daten für den Thread fest
+			(&data_array[k])->threadid = k+1;
+			(&data_array[k])->input = Matrix_In;
+			(&data_array[k])->output = Matrix_Out;
+			(&data_array[k])->pars_term_iter = term_iteration;
+			(&data_array[k])->pars_termination = options->termination;
+			(&data_array[k])->pars_inf_func = options->inf_func;
+			// @EDIT Nun erzeugen wir die Threads mit den Daten und rufen damit die
+			// Funktion "calculate_step" auf
+			pthread_create(&threads[k], &attr, calculate_step,(void *) &data_array[k]);
+		}
 
-				star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
-
-				if (options->inf_func == FUNC_FPISIN)
-				{
-					star += fpisin_i * sin(pih * (double)j);
-				}
-
-				if (options->termination == TERM_PREC || term_iteration == 1)
-				{
-					residuum = Matrix_In[i][j] - star;
-					residuum = (residuum < 0) ? -residuum : residuum;
-					maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
-				}
-
-				Matrix_Out[i][j] = star;
-			}
+		// @EDIT Jetzt wird das Attribut "zerstört" und die Threads werden wieder
+		// gejoined.
+		pthread_attr_destroy(&attr);
+ 	  for(int k = 0; k < NTHREADS; k++)
+		{
+			pthread_join(threads[k], &status);
+		}
+		// @EDIT Aus dem "maxres" Array wird nun noch das tatsächliche maximale
+		// Residuum ermittelt.
+		for (int l = 0; l < NTHREADS; l++)
+		{
+			maxresiduum = (maxres[l] > maxresiduum) ? maxres[l] : maxresiduum;
 		}
 
 		results->stat_iteration++;
 		results->stat_precision = maxresiduum;
 
 		/* exchange m1 and m2 */
-		i = m1;
+		p = m1;
 		m1 = m2;
-		m2 = i;
+		m2 = p;
 
 		/* check for stopping calculation depending on termination method */
 		if (options->termination == TERM_PREC)
@@ -288,6 +383,8 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 			term_iteration--;
 		}
 	}
+
+
 
 	results->m = m2;
 }
@@ -368,7 +465,6 @@ DisplayMatrix (struct calculation_arguments* arguments, struct calculation_resul
 
 	printf("Matrix:\n");
 
-	//Das parallelisiere ich erstmal nicht weil das nur neun loops macht.
 	for (y = 0; y < 9; y++)
 	{
 		for (x = 0; x < 9; x++)
@@ -407,6 +503,8 @@ main (int argc, char** argv)
 	DisplayMatrix(&arguments, &results, &options);
 
 	freeMatrices(&arguments);
+	// @EDIT Das soll man laut wiki am Ende der main machen ;)
+	pthread_exit(NULL);
 
 	return 0;
 }
