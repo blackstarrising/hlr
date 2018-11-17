@@ -18,7 +18,7 @@
 /* Include standard header file.                                            */
 /* ************************************************************************ */
 #define _POSIX_C_SOURCE 200809L
-
+#define NTHREADS 4
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -27,21 +27,7 @@
 #include <malloc.h>
 #include <sys/time.h>
 #include <pthread.h>
-
 #include "partdiff.h"
-
-#define THREADCOUNT 	4
-double maxresiduum = 0.0;
-pthread_mutex_t mutex_ij;
-struct options options;
-double** Matrix_In;
-double** Matrix_Out;
-int term_iteration;
-int term_subiteration = 1;
-int i, j;
-
-
-
 
 struct calculation_arguments
 {
@@ -50,7 +36,6 @@ struct calculation_arguments
 	double    h;              /* length of a space between two lines            */
 	double    ***Matrix;      /* index matrix used for addressing M             */
 	double    *M;             /* two matrices with real values                  */
-  int       threadID;       /* ID of current Thread                           */
 };
 
 struct calculation_results
@@ -60,16 +45,13 @@ struct calculation_results
 	double    stat_precision; /* actual precision of all slaves in iteration    */
 };
 
-struct steparguments {
+struct step_params
+{
+	uint64_t num_iterations;
+	uint64_t num_rest;
 
-  int step_i;
-  int step_j;
 
-  double step_pih;
-  double step_fpisin;
 };
-struct calculation_results results;
-struct calculation_arguments arguments;
 
 /* ************************************************************************ */
 /* Global variables                                                         */
@@ -78,22 +60,24 @@ struct calculation_arguments arguments;
 /* time measurement variables */
 struct timeval start_time;       /* time when program started                      */
 struct timeval comp_time;        /* time when calculation completed                */
-
+double** Matrix_Out;
+int num_iterations;
+int num_rest;
 
 /* ************************************************************************ */
 /* initVariables: Initializes some global variables                         */
 /* ************************************************************************ */
 static
 void
-initVariables ()
+initVariables (struct calculation_arguments* arguments, struct calculation_results* results, struct options const* options)
 {
-	(&arguments)->N = ((&options)->interlines * 8) + 9 - 1;
-	(&arguments)->num_matrices = ((&options)->method == METH_JACOBI) ? 2 : 1;
-	(&arguments)->h = 1.0 / (&arguments)->N;
+	arguments->N = (options->interlines * 8) + 9 - 1;
+	arguments->num_matrices = (options->method == METH_JACOBI) ? 2 : 1;
+	arguments->h = 1.0 / arguments->N;
 
-	(&results)->m = 0;
-	(&results)->stat_iteration = 0;
-	(&results)->stat_precision = 0;
+	results->m = 0;
+	results->stat_iteration = 0;
+	results->stat_precision = 0;
 }
 
 /* ************************************************************************ */
@@ -104,14 +88,14 @@ void
 freeMatrices (struct calculation_arguments* arguments)
 {
 	uint64_t i;
+
 	for (i = 0; i < arguments->num_matrices; i++)
 	{
-	  free(arguments->Matrix[i]);
+		free(arguments->Matrix[i]);
 	}
 
 	free(arguments->Matrix);
 	free(arguments->M);
-
 }
 
 /* ************************************************************************ */
@@ -202,90 +186,44 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 	}
 }
 
-
-
-void* calculateStep (void* sargs)
+static
+void
+calculate_step(void* pars)
 {
-	printf("Hello, I'm in calculateStep!");
-	struct steparguments *mystepargs;
-	mystepargs = (struct steparguments *) sargs;
-  double star;                                /* four times center value minus 4 neigh.b values */
-  double residuum;                            /* residuum of current iteration */
-  double fpisin_i = 0.0;
-	/*
-	sargs[t].step_i = i;
-	sargs[t].step_j = j;
-	sargs[t].step_Matrix_In = Matrix_In;
-	sargs[t].step_Matrix_Out = Matrix_Out;
-	sargs[t].step_pih = pih;
-	sargs[t].step_fpisin = fpisin;
+	struct step_params* mypars;
+	mypars = (struct step_params*) pars;
+	/* code */
+	int counter = 0;
+for (Matrix_Out; counter < num_iterations; Matrix_Out = Matrix_Out + NTHREADS) {
+	/* code */
+	++counter;
+}
 
-	*/
-
-  if ((&options)->inf_func == FUNC_FPISIN)
-    {
-      fpisin_i = mystepargs->step_fpisin * sin(mystepargs->step_pih * (double)mystepargs->step_i);
-    }
-
-  star = 0.25 * (Matrix_In[mystepargs->step_i-1][mystepargs->step_j] + Matrix_In[mystepargs->step_i][mystepargs->step_j-1] + Matrix_In[mystepargs->step_i][mystepargs->step_j+1] + Matrix_In[mystepargs->step_i+1][mystepargs->step_j]);
-  if ((&options)->inf_func == FUNC_FPISIN)
-    {
-      star += fpisin_i * sin(mystepargs->step_pih * (double)mystepargs->step_j);
-    }
-
-  if ((&options)->termination == TERM_PREC || term_iteration == 1)
-    {
-      residuum = Matrix_In[mystepargs->step_i][mystepargs->step_j] - star;
-      residuum = (residuum < 0) ? -residuum : residuum;
-      maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
-    }
-
-  Matrix_Out[mystepargs->step_i][mystepargs->step_j] = star;
-
-  //Look whether there is more work to do, if so: continue!
-  pthread_mutex_lock(&mutex_ij);
-  if(term_subiteration == 1)
-    {
-      mystepargs->step_i=i;
-      mystepargs->step_j=j;
-      i++;
-      if(j == (&arguments)->N)
-	{
-	  j = 1;
-	  i++;
-	  if(i == (&arguments)->N){term_subiteration = 0;}
-	}
-      pthread_mutex_unlock(&mutex_ij);
-      calculateStep(mystepargs);
-    }
-  else{pthread_mutex_unlock(&mutex_ij);}
-
-	(&results)->stat_iteration++;
-	(&results)->stat_precision = maxresiduum;
-  }
+}
 
 /* ************************************************************************ */
 /* calculate: solves the equation                                           */
 /* ************************************************************************ */
 static
 void
-calculate ()
+calculate (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options)
 {
-	                                   /* local variables for loops */
+	int i, j;                                   /* local variables for loops */
 	int m1, m2;                                 /* used as indices for old and new matrices */
-	//double maxresiduum;                         /* maximum residuum value of a slave in iteration */
+	double star;                                /* four times center value minus 4 neigh.b values */
+	double residuum;                            /* residuum of current iteration */
+	double maxresiduum;                         /* maximum residuum value of a slave in iteration */
 
-	int const N = (&arguments)->N;
-	double const h = (&arguments)->h;
+	int const N = arguments->N;
+	double const h = arguments->h;
 
 	double pih = 0.0;
 	double fpisin = 0.0;
 
-
-
+	int term_iteration = options->term_iteration;
 
 	/* initialize m1 and m2 depending on algorithm */
-	if ((&options)->method == METH_JACOBI)
+	if (options->method == METH_JACOBI)
 	{
 		m1 = 0;
 		m2 = 1;
@@ -296,57 +234,61 @@ calculate ()
 		m2 = 0;
 	}
 
-	if ((&options)->inf_func == FUNC_FPISIN)
+	if (options->inf_func == FUNC_FPISIN)
 	{
 		pih = PI * h;
 		fpisin = 0.25 * TWO_PI_SQUARE * h * h;
 	}
-	printf("gehe ich hier rein?");
-	//Abbruchbedingung muss mit Mutex sinnvoll implementiert werden
+
 	while (term_iteration > 0)
 	{
-		Matrix_Out = (&arguments)->Matrix[m1];
-		Matrix_In  = (&arguments)->Matrix[m2];
-
+		Matrix_Out = arguments->Matrix[m1];
+		double** Matrix_In  = arguments->Matrix[m2];
 
 		maxresiduum = 0;
+		pthread_t threads[NTHREADS];
+		struct step_params spars;
+		num_rest = (N*N)%NTHREADS;
+		num_iterations = ((N*N)-num_rest)/NTHREADS;
 
-		pthread_t threads[THREADCOUNT];
-		//Spawn N Threads
-		i = 1;
-		j = 1;
-		struct steparguments sargs[THREADCOUNT];
-		for (int t = 0; t < THREADCOUNT; t++)
-		  {
+		for (int k = 0; k < NTHREADS; k++)
+		{
+			/* code */
+			pthread_create(&threads[k], NULL, calculate_step,(void *) &spars);
+		}
+		/* over all rows */
+		for (i = 1; i < N; i++)
+		{
+			double fpisin_i = 0.0;
 
-		    //set the new arguments
-				struct steparguments sarg_i;
-				sargs[t] = sarg_i;
-		    sargs[t].step_i = i;
-		    sargs[t].step_j = j;
-		    sargs[t].step_pih = pih;
-		    sargs[t].step_fpisin = fpisin;
+			if (options->inf_func == FUNC_FPISIN)
+			{
+				fpisin_i = fpisin * sin(pih * (double)i);
+			}
 
-		    pthread_create(&threads[t], NULL, calculateStep, (void *) &sargs[t]);
-		    j++;
-		    if(j == N)
-		      {
-						j = 1;
-						i++;
-						if(i == N)
-						{
-			  		term_subiteration = 0;
-			  		break;
-						}//Catches the case that N² < THREADCOUNT
-		      }
-		  }
+			/* over all columns */
+			for (j = 1; j < N; j++)
+			{
+				star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
 
-		for (int t = 0; t < THREADCOUNT; t++)
-		  {
-		    pthread_join(threads[t], NULL);
-		  }
+				if (options->inf_func == FUNC_FPISIN)
+				{
+					star += fpisin_i * sin(pih * (double)j);
+				}
 
+				if (options->termination == TERM_PREC || term_iteration == 1)
+				{
+					residuum = Matrix_In[i][j] - star;
+					residuum = (residuum < 0) ? -residuum : residuum;
+					maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
+				}
 
+				Matrix_Out[i][j] = star;
+			}
+		}
+
+		results->stat_iteration++;
+		results->stat_precision = maxresiduum;
 
 		/* exchange m1 and m2 */
 		i = m1;
@@ -354,20 +296,20 @@ calculate ()
 		m2 = i;
 
 		/* check for stopping calculation depending on termination method */
-		if ((&options)->termination == TERM_PREC)
+		if (options->termination == TERM_PREC)
 		{
-			if (maxresiduum < (&options)->term_precision)
+			if (maxresiduum < options->term_precision)
 			{
 				term_iteration = 0;
 			}
 		}
-		else if ((&options)->termination == TERM_ITER)
+		else if (options->termination == TERM_ITER)
 		{
 			term_iteration--;
 		}
 	}
 
-	(&results)->m = m2;
+	results->m = m2;
 }
 
 /* ************************************************************************ */
@@ -465,30 +407,25 @@ DisplayMatrix (struct calculation_arguments* arguments, struct calculation_resul
 int
 main (int argc, char** argv)
 {
-	term_iteration = (&options)->term_iteration;
-	printf("Termiteration am anfang der Main: %d", term_iteration);
-
-	pthread_mutex_init(&mutex_ij, NULL);//Init des Mutex
+	struct options options;
+	struct calculation_arguments arguments;
+	struct calculation_results results;
 
 	AskParams(&options, argc, argv);
 
-	initVariables();
+	initVariables(&arguments, &results, &options);
 
 	allocateMatrices(&arguments);
 	initMatrices(&arguments, &options);
 
 	gettimeofday(&start_time, NULL);
-
-	calculate();
-
+	calculate(&arguments, &results, &options);
 	gettimeofday(&comp_time, NULL);
 
 	displayStatistics(&arguments, &results, &options);
 	DisplayMatrix(&arguments, &results, &options);
 
 	freeMatrices(&arguments);
-
-	pthread_mutex_destroy(&mutex_ij);
 
 	return 0;
 }
