@@ -18,7 +18,7 @@
 /* Include standard header file.                                            */
 /* ************************************************************************ */
 #define _POSIX_C_SOURCE 200809L
-#define NTHREADS 4
+#define NTHREADS 12
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -45,6 +45,7 @@ struct calculation_results
 	double    stat_precision; /* actual precision of all slaves in iteration    */
 };
 
+// @EDIT Dieses Struct enthält alle relevanten Daten für den Thread
 struct step_params
 {
 	uint64_t 	threadid;
@@ -63,14 +64,18 @@ struct step_params
 /* time measurement variables */
 struct timeval start_time;       /* time when program started                      */
 struct timeval comp_time;        /* time when calculation completed                */
-//Anzahl Iterationen, die EIN thread machen muss:
+// @EDIT Für unsere Thread-Funktion müssen wir einige zusätzliche globale
+// variablen definieren
+// @EDIT Anzahl Iterationen, die EIN thread machen muss:
 int num_iterations;
-//Da nicht alle Threads immer perfekt aufgeteilt werden können, müssen einige eine Iteration mehr machen:
+// @EDIT: Da nicht alle Threads immer perfekt aufgeteilt werden können,
+// müssen einige evtl eine Iteration mehr machen:
 int num_rest;
-//Anzahl Elemente pro Zeile:
+// @EDIT Anzahl Elemente pro Zeile:
 int num_elements;
-//Das ist ein Array, wo jeder Thread das maximale residuum der von ihm bearbeiteten Elemente hereinschreibt:
-int maxres[NTHREADS];
+// @EDIT Das ist ein Array, wo jeder Thread das maximale residuum der von ihm
+// bearbeiteten Elemente hereinschreibt (damit sparen wir uns ein mutex):
+static double maxres[NTHREADS];
 double pih;
 double fpisin;
 
@@ -196,10 +201,11 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 	}
 }
 
-static
-void
+
+void *
 calculate_step(void* pars)
 {
+	// @EDIT Zunächst legen wir einige Startparameter fest
 	struct step_params* mypars;
 	mypars = (struct step_params*) pars;
 	int my_id = mypars->threadid;
@@ -211,18 +217,21 @@ calculate_step(void* pars)
 	int start_j = 1;
 	int my_iter = num_iterations;
 	double star;
-	//Definiere welche Threads eine Iteration mehr machen müssen
+	//@EDIT Definiere ob dieser Thread eine Iteration mehr machen muss
 	if(my_id <= num_rest)
 	{
 		my_iter += 1;
 	}
-
+	// @EDIT Hier wird der Fall abgefangen, dass es mehr threads geben kann,
+	// als Elemente in der Zeile sind. Dann muss das i angepasst werden und
+	// j muss entsprechend erhöht werden.
 	while (num_elements < start_i)
 	{
 		start_i = start_i - num_elements;
 		start_j += 1;
 	}
-
+	// @EDIT Das ist nun die kopierte for-loop aus dem Sequenziellen Programm;
+	// natürlich sind einige Parameternamen angepasst worden.
 	for (int count = 0; count < my_iter; count++)
 	{
 		double fpisin_i = 0.0;
@@ -243,7 +252,9 @@ calculate_step(void* pars)
 		}
 
 		my_output[start_i][start_j] = star;
-
+		// @EDIT Wenn dieses Element berechnet ist, geht der thread mit der Schrittgröße
+		// der Anzahl an threads weiter durch die Matrix. Sollte der Fall eintreten, dass
+		// der Thread die Zeile überschreitet, werden die i und j-Werte wieder angepasst (wie oben)
 		start_i += NTHREADS;
 		while(num_elements < start_i)
 		{
@@ -251,7 +262,8 @@ calculate_step(void* pars)
 			start_j += 1;
 		}
 	}
-
+	// @EDIT Das maximale Residuum dieses threads wird in den entspechenden Teil
+	// des globalen maxres arrays geschrieben
 	maxres[my_id-1] = my_maxres;
 }
 
@@ -262,9 +274,10 @@ static
 void
 calculate (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options)
 {
+	// @EDIT p brauchen wir später nur um die Matrizen zu tauschen.
 	int p;
 	int m1, m2;                                 /* used as indices for old and new matrices */
-	double maxresiduum;                         /* maximum residuum value of a slave in iteration */
+	static double maxresiduum;                         /* maximum residuum value of a slave in iteration */
 
 	int const N = arguments->N;
 	double const h = arguments->h;
@@ -297,33 +310,52 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 		double** Matrix_Out = arguments->Matrix[m1];
 		double** Matrix_In  = arguments->Matrix[m2];
 
-		maxresiduum = 0;
+		maxresiduum = 0.0;
+		// @EDIT Hier definieren wir unsere pthreads und erzeugen außerdem ein
+		// joinable Attribut.
 		pthread_t threads[NTHREADS];
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+   	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+		void* status;
+		// @EDIT In diesem Array sind die structs mit den Daten für die Threads
+		struct step_params data_array[NTHREADS];
 
-		num_rest = (N*N)%NTHREADS;
-		num_iterations = ((N*N)-num_rest)/NTHREADS;
+		// @EDIT Sollten die Interlines nicht durch die Thread-Zahl teilbar sein,
+		// müssen später einige threads ein Element mehr als andere Threads
+		// ausrechnen
+		num_rest = ((N-1)*(N-1))%NTHREADS;
+		// @EDIT So viele Iterationen macht ein Thread (plus evtl eine mehr)
+		num_iterations = (((N-1)*(N-1))-num_rest)/NTHREADS;
 		num_elements = N-1;
 
 		for (int k = 0; k < NTHREADS; k++)
 		{
-			/* Erzeuge für jeden Thread einen Struct und lege Werte fest: */
-			struct step_params spars;
-			(&spars)->threadid = k+1;
-			(&spars)->input = Matrix_In;
-			(&spars)->output = Matrix_Out;
-			(&spars)->pars_term_iter = term_iteration;
-			(&spars)->pars_termination = options->termination;
-			(&spars)->pars_inf_func = options->inf_func;
-
-			pthread_create(&threads[k], NULL, calculate_step,(void *) &spars);
+			// @EDIT Hier legen wir für jeden Struct die Daten für den Thread fest
+			(&data_array[k])->threadid = k+1;
+			(&data_array[k])->input = Matrix_In;
+			(&data_array[k])->output = Matrix_Out;
+			(&data_array[k])->pars_term_iter = term_iteration;
+			(&data_array[k])->pars_termination = options->termination;
+			(&data_array[k])->pars_inf_func = options->inf_func;
+			// @EDIT Nun erzeugen wir die Threads mit den Daten und rufen damit die
+			// Funktion "calculate_step" auf
+			pthread_create(&threads[k], &attr, calculate_step,(void *) &data_array[k]);
 		}
 
+		// @EDIT Jetzt wird das Attribut "zerstört" und die Threads werden wieder
+		// gejoined.
+		pthread_attr_destroy(&attr);
+ 	  for(int k = 0; k < NTHREADS; k++)
+		{
+			pthread_join(threads[k], &status);
+		}
+		// @EDIT Aus dem "maxres" Array wird nun noch das tatsächliche maximale
+		// Residuum ermittelt.
 		for (int l = 0; l < NTHREADS; l++)
 		{
-			/* code */
 			maxresiduum = (maxres[l] > maxresiduum) ? maxres[l] : maxresiduum;
 		}
-
 
 		results->stat_iteration++;
 		results->stat_precision = maxresiduum;
@@ -346,6 +378,8 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 			term_iteration--;
 		}
 	}
+
+
 
 	results->m = m2;
 }
@@ -464,6 +498,8 @@ main (int argc, char** argv)
 	DisplayMatrix(&arguments, &results, &options);
 
 	freeMatrices(&arguments);
+	// @EDIT Das soll man laut wiki am Ende der main machen ;)
+	pthread_exit(NULL);
 
 	return 0;
 }
