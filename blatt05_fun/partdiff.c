@@ -47,9 +47,12 @@ struct calculation_results
 
 struct step_params
 {
-	uint64_t num_iterations;
-	uint64_t num_rest;
-
+	uint64_t 	threadid;
+	double		**input;
+	double		**output;
+	uint64_t 	pars_term_iter;
+	uint64_t 	pars_inf_func;
+	uint64_t 	pars_termination;
 
 };
 
@@ -60,9 +63,16 @@ struct step_params
 /* time measurement variables */
 struct timeval start_time;       /* time when program started                      */
 struct timeval comp_time;        /* time when calculation completed                */
-double** Matrix_Out;
+//Anzahl Iterationen, die EIN thread machen muss:
 int num_iterations;
+//Da nicht alle Threads immer perfekt aufgeteilt werden können, müssen einige eine Iteration mehr machen:
 int num_rest;
+//Anzahl Elemente pro Zeile:
+int num_elements;
+//Das ist ein Array, wo jeder Thread das maximale residuum der von ihm bearbeiteten Elemente hereinschreibt:
+int maxres[NTHREADS];
+double pih;
+double fpisin;
 
 /* ************************************************************************ */
 /* initVariables: Initializes some global variables                         */
@@ -192,13 +202,57 @@ calculate_step(void* pars)
 {
 	struct step_params* mypars;
 	mypars = (struct step_params*) pars;
-	/* code */
-	int counter = 0;
-for (Matrix_Out; counter < num_iterations; Matrix_Out = Matrix_Out + NTHREADS) {
-	/* code */
-	++counter;
-}
+	int my_id = mypars->threadid;
+	double** my_input = mypars->input;
+	double** my_output = mypars->output;
+	double my_res = 0.0;
+	double my_maxres = 0.0;
+	int start_i = my_id;
+	int start_j = 1;
+	int my_iter = num_iterations;
+	double star;
+	//Definiere welche Threads eine Iteration mehr machen müssen
+	if(my_id <= num_rest)
+	{
+		my_iter += 1;
+	}
 
+	while (num_elements < start_i)
+	{
+		start_i = start_i - num_elements;
+		start_j += 1;
+	}
+
+	for (int count = 0; count < my_iter; count++)
+	{
+		double fpisin_i = 0.0;
+
+		star = 0.25 * (my_input[start_i-1][start_j] + my_input[start_i][start_j-1] + my_input[start_i][start_j+1] + my_input[start_i+1][start_j]);
+
+		if (mypars->pars_inf_func == FUNC_FPISIN)
+		{
+			fpisin_i = fpisin * sin(pih * (double)start_i);
+			star += fpisin_i * sin(pih * (double)start_j);
+		}
+
+		if (mypars->pars_termination == TERM_PREC || mypars->pars_term_iter == 1)
+		{
+			my_res = my_input[start_i][start_j] - star;
+			my_res = (my_res < 0) ? -my_res : my_res;
+			my_maxres = (my_res < my_maxres) ? my_maxres : my_res;
+		}
+
+		my_output[start_i][start_j] = star;
+
+		start_i += NTHREADS;
+		while(num_elements < start_i)
+		{
+			start_i = start_i - num_elements;
+			start_j += 1;
+		}
+	}
+
+	maxres[my_id-1] = my_maxres;
 }
 
 /* ************************************************************************ */
@@ -208,17 +262,15 @@ static
 void
 calculate (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options)
 {
-	int i, j;                                   /* local variables for loops */
+	int p;
 	int m1, m2;                                 /* used as indices for old and new matrices */
-	double star;                                /* four times center value minus 4 neigh.b values */
-	double residuum;                            /* residuum of current iteration */
 	double maxresiduum;                         /* maximum residuum value of a slave in iteration */
 
 	int const N = arguments->N;
 	double const h = arguments->h;
 
-	double pih = 0.0;
-	double fpisin = 0.0;
+	pih = 0.0;
+	fpisin = 0.0;
 
 	int term_iteration = options->term_iteration;
 
@@ -242,58 +294,44 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 
 	while (term_iteration > 0)
 	{
-		Matrix_Out = arguments->Matrix[m1];
+		double** Matrix_Out = arguments->Matrix[m1];
 		double** Matrix_In  = arguments->Matrix[m2];
 
 		maxresiduum = 0;
 		pthread_t threads[NTHREADS];
-		struct step_params spars;
+
 		num_rest = (N*N)%NTHREADS;
 		num_iterations = ((N*N)-num_rest)/NTHREADS;
+		num_elements = N-1;
 
 		for (int k = 0; k < NTHREADS; k++)
 		{
-			/* code */
+			/* Erzeuge für jeden Thread einen Struct und lege Werte fest: */
+			struct step_params spars;
+			(&spars)->threadid = k+1;
+			(&spars)->input = Matrix_In;
+			(&spars)->output = Matrix_Out;
+			(&spars)->pars_term_iter = term_iteration;
+			(&spars)->pars_termination = options->termination;
+			(&spars)->pars_inf_func = options->inf_func;
+
 			pthread_create(&threads[k], NULL, calculate_step,(void *) &spars);
 		}
-		/* over all rows */
-		for (i = 1; i < N; i++)
+
+		for (int l = 0; l < NTHREADS; l++)
 		{
-			double fpisin_i = 0.0;
-
-			if (options->inf_func == FUNC_FPISIN)
-			{
-				fpisin_i = fpisin * sin(pih * (double)i);
-			}
-
-			/* over all columns */
-			for (j = 1; j < N; j++)
-			{
-				star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
-
-				if (options->inf_func == FUNC_FPISIN)
-				{
-					star += fpisin_i * sin(pih * (double)j);
-				}
-
-				if (options->termination == TERM_PREC || term_iteration == 1)
-				{
-					residuum = Matrix_In[i][j] - star;
-					residuum = (residuum < 0) ? -residuum : residuum;
-					maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
-				}
-
-				Matrix_Out[i][j] = star;
-			}
+			/* code */
+			maxresiduum = (maxres[l] > maxresiduum) ? maxres[l] : maxresiduum;
 		}
+
 
 		results->stat_iteration++;
 		results->stat_precision = maxresiduum;
 
 		/* exchange m1 and m2 */
-		i = m1;
+		p = m1;
 		m1 = m2;
-		m2 = i;
+		m2 = p;
 
 		/* check for stopping calculation depending on termination method */
 		if (options->termination == TERM_PREC)
