@@ -61,7 +61,7 @@ struct options options;
 struct calculation_arguments arguments;
 struct calculation_results results;
 
-static int term_subiteration;
+int term_subiteration;
 static int* ptr_subiteration = &term_subiteration;
 
 /* ************************************************************************ */
@@ -191,9 +191,7 @@ static
 void
 calculateStep (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options, int i, int j, double** Matrix_In, double** Matrix_Out, double pih, double fpisin, int* term_iteration_ptr, double* maxresiduum_ptr)
 {
-  //KACKE
-  printf("Das ist alles dumm!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! %f \n", *ptr_subiteration);
-  
+
   double star;                                /* four times center value minus 4 neigh.b values */
   double residuum;                            /* residuum of current iteration */
   double fpisin_i = 0.0;
@@ -218,16 +216,19 @@ calculateStep (struct calculation_arguments const* arguments, struct calculation
   
   Matrix_Out[i][j] = star;
 
-  if(term_subiteration == 1)
+  if(*ptr_subiteration == 1)
     {
       j++;
       if(j == arguments->N)
 	{
 	  j = 1;
 	  i++;
-	  if(i == arguments->N){term_subiteration = 0;}
+	  if(i == arguments->N)
+	    {
+	      *ptr_subiteration = 0;
+	    }
 	}
-      //calculateStep(arguments, results, options, i, j, Matrix_In, Matrix_Out, pih, fpisin, term_iteration_ptr, maxresiduum_ptr);
+      calculateStep(arguments, results, options, i, j, Matrix_In, Matrix_Out, pih, fpisin, term_iteration_ptr, maxresiduum_ptr);
     }
 }
 
@@ -247,10 +248,9 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 	double fpisin = 0.0;
 
 	int term_iteration = options->term_iteration;
-	//KACKE
+
 	*ptr_subiteration = 1;
-	printf("Hier ist noch gut oder? %d \n", *ptr_subiteration);
-	
+
 	/* initialize m1 and m2 depending on algorithm */
 	if (options->method == METH_JACOBI)
 	{
@@ -285,7 +285,6 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 		//... -> Inside Thread: wenn fertig, frage ThreadManager ob was frei ist. Wenn ja -> nehme neue Kombo und mache nochmal. Wenn -1 -1 -> wart (spawn noch nicht abgeschlossen). Wenn -2 -2 -> Ende, weiter zum Join
 		//Join threads together
 
-		//KACKE
 		calculateStep(arguments, results, options, 1, 1, Matrix_In, Matrix_Out, pih, fpisin, &term_iteration, &maxresiduum);
 
 		results->stat_iteration++;
