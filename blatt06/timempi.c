@@ -53,7 +53,10 @@ int main(int argc, char** argv)
       //Sende Outputstring an Prozess 0
       MPI_Send(outputstring, 50, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
     }
+  //Barrier damit kein Prozess beendet wird bevor alle fertig sind:
   MPI_Barrier(MPI_COMM_WORLD);
+
+  //Abschlussnachrichten:
   printf("Rang %i beendet jetzt!\n", world_rank);
   MPI_Finalize();
 }
