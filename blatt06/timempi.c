@@ -14,8 +14,8 @@ int main(int argc, char** argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
   char processor_name[MPI_MAX_PROCESSOR_NAME];
-  int name_len;
-  MPI_Get_processor_name(processor_name, &name_len);
+  int namelen;
+  MPI_Get_processor_name(processor_name, &namelen);
 
   time_t rawtime;
   struct tm *time_info;
@@ -27,8 +27,10 @@ int main(int argc, char** argv)
 
   struct timeval exacttime;
   gettimeofday(&exacttime, NULL);
-  
-  printf("%s: %s.%ld - rank: %d \n", processor_name, time_buffer, exacttime.tv_usec, world_rank);
 
+  char* outputstring;
+  sprintf(outputstring, "%s: %s.%ld - rank: %d \n", processor_name, time_buffer, exacttime.tv_usec, world_rank);
+  printf(outputstring);
+  
   MPI_Finalize();
 }
