@@ -18,14 +18,7 @@ int main(int argc, char** argv)
   int world_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-  if (world_size < 2)
-    {
-      MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-
   char outputstring[50];  
-
-  //MPI_Barrier(MPI_COMM_WORLD);
 
   if(world_rank == 0)
     {      
@@ -51,9 +44,10 @@ int main(int argc, char** argv)
       strftime(time_buffer, 30, "%x %X", time_info);
       struct timeval exacttime;
       gettimeofday(&exacttime, NULL);
-
+      suseconds_t usecs = exacttime.tv_usec;
+      
       //Generiere Outputstring
-      sprintf(outputstring, "%s: %s.%ld", processor_name, time_buffer, exacttime.tv_usec);
+      sprintf(outputstring, "%s: %s.%ld", processor_name, time_buffer, usecs);
       //sprintf(outputstring,"test");
 
       //Sende Outputstring an Prozess 0

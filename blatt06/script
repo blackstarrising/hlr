@@ -10,4 +10,4 @@
 . /etc/profile.d/wr-spack.sh
 spack load --dependencies mpi
 
-mpiexec ./timempi
+mpiexec ./timempi2
