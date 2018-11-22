@@ -13,7 +13,7 @@ int main(int argc, char** argv)
   //Lese Anzahl Prozesse aus
   int world_size;
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-  
+
   //Lese Prozessrang aus
   int world_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
