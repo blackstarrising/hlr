@@ -9,5 +9,5 @@ timempi2: timempi2.c
 	${MPICC} -o timempi2 timempi2.c
 
 clean:
-	rm timepi
-	rm timepi2
+	rm timempi
+	rm timempi2

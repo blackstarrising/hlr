@@ -48,7 +48,6 @@ int main(int argc, char** argv)
       
       //Generiere Outputstring
       sprintf(outputstring, "%s: %s.%ld", processor_name, time_buffer, usecs);
-      //sprintf(outputstring,"test");
 
       //Sende Outputstring an Prozess 0
       MPI_Send(outputstring, 50, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
