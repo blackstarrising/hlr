@@ -26,12 +26,13 @@
 #include <math.h>
 #include <malloc.h>
 #include <sys/time.h>
-
+#include <pthread.h>
 #include "partdiff.h"
 
 struct calculation_arguments
 {
 	uint64_t  N;              /* number of spaces between lines (lines=N+1)     */
+	uint64_t  num_threads;	  /* The number of pthreads used for calculation    */
 	uint64_t  num_matrices;   /* number of matrices                             */
 	double    h;              /* length of a space between two lines            */
 	double    ***Matrix;      /* index matrix used for addressing M             */
@@ -64,6 +65,7 @@ initVariables (struct calculation_arguments* arguments, struct calculation_resul
 	arguments->N = (options->interlines * 8) + 9 - 1;
 	arguments->num_matrices = (options->method == METH_JACOBI) ? 2 : 1;
 	arguments->h = 1.0 / arguments->N;
+	arguments->num_threads = options->
 
 	results->m = 0;
 	results->stat_iteration = 0;
@@ -221,7 +223,7 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 		double** Matrix_In  = arguments->Matrix[m2];
 
 		maxresiduum = 0;
-
+		/* As CPU cache is used in best case for row by row reading of matrices we will split all the rows on the number of threads. */
 		/* over all rows */
 		for (i = 1; i < N; i++)
 		{

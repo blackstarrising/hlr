@@ -2,19 +2,12 @@ Die Bearbeitungszeit bitte in ganzen Stunden angeben (aufrunden).
 In den restlichen Zeilen jeweils ein X in der zutreffenden Spalte setzen.
 
 Bearbeitungszeit:  
-Schwierigkeit:     [ ] zu leicht         [ ] genau richtig     [x] zu schwer
-Lehrreich:         [ ] wenig             [x] etwas             [ ] sehr
-Verständlichkeit:  [ ] großteils unklar  [ ] teilweise unklar  [x] verständlich
+Schwierigkeit:     [ ] zu leicht         [ ] genau richtig     [ ] zu schwer
+Lehrreich:         [ ] wenig             [ ] etwas             [ ] sehr
+Verständlichkeit:  [ ] großteils unklar  [ ] teilweise unklar  [ ] verständlich
 
 Kommentar:
 Zeitaufwand zu groß? Wo sind Sie nicht weiter gekommen?
-Es war wirklich super aufwendig, sich in sämtliche Einzelheiten zu posix-threads einzuarbeiten und das dann selber umzusetzen. Eine einfachere Aufgabe als "Hinführung" wäre hier besser gewesen.
-
 Was war zu schwer oder unverständlich?
-Siehe oben: Einarbeitung in posix-threads sowie Umsetzung. Zur Leistungsanalyse sind wir nicht mal gekommen. Verständlich geschrieben war der Zettel allerdings
-
 Was könnten wir verbessern?
-Eine einfachere Aufgabe zur Hinführung wäre hier besser gewesen als das doch umfangreiche partdiff-programm zu parallelisieren.
-
 Was hat Ihnen besonders gut gefallen?
-Was die Aufgabe tatsächlich gebracht hat: Wir sollten ja lernen, wie toll OMP eigentlich ist und was es einem alles abnimmt. Das haben wir denke ich sehr deutlich verstanden :)
