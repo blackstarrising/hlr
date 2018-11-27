@@ -1,73 +1,69 @@
-#include <mpi.h>
 #include <stdio.h>
-#include <time.h>
+#include <mpi.h>
+#include <limits.h>
+//Headerfile für gettimeofday
 #include <sys/time.h>
-#include <string.h>
-#include <stdlib.h>
+#include <time.h>
+//Festlegen einiger Konstanten
+#define TIME_BUFFER_SIZE 50
+#define NODE_MESSAGE_BUFFER_SIZE 100
+#define MASTER_RANK 0
+#define NODE_MESSAGE_TAG 0
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
-  //Initialisiere MPI
-  MPI_Init(NULL, NULL);
+	int ierr, rank, world_size;
+	ierr = MPI_Init(&argc, &argv);
 
-  //Lese Anzahl Prozesse aus
-  int world_size;
-  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-  
-  //Lese Prozessrang aus
-  int world_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+	//Rang des Prozess auslesen.
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-  char outputstring[50];
-  int usecs = 1000000;//Da Rang 0 diesen WErt nicht ändert muss er dort (durch diese initialisierung) größer sein als alle möglichen werte der anderen Prozesse.
+	// Vorberiten der Variable für die Nachricht von den Nodes
+	char node_message[NODE_MESSAGE_BUFFER_SIZE];
+  // usecs wird hier von jedem Prozess gebraucht
+  long usecs, lowest_usecs;
+	if (rank == MASTER_RANK) {
+		for(int i = 1; i < world_size; i++) {
+			//MPI Nachrichten empfangen
+			MPI_Recv(node_message, NODE_MESSAGE_BUFFER_SIZE, MPI_CHAR, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			printf("%s", node_message);
+		}
+    usecs = LONG_MAX;
+	} else {
+		//Inititalisieren der Variable für den Hostname
+		char hostname[MPI_MAX_PROCESSOR_NAME];
+		int processor_name_length;
+		MPI_Get_processor_name(hostname, &processor_name_length);
 
-  MPI_Barrier(MPI_COMM_WORLD);
+		// Variablen für die Zeit
+		struct timeval current_time;
+		struct tm *local_time;
+		char time_chars[TIME_BUFFER_SIZE];
 
-  if(world_rank == 0)
-    {
-      //Prozess 0 empfängt die Strings aller anderen Prozesse.
-      for (int j = 1; j < world_size; j++)
-	{
-	  MPI_Recv(outputstring, 50, MPI_CHAR, j, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-	  printf("%s\n", outputstring);
+		gettimeofday(&current_time,(struct timezone *)0);
+		local_time = localtime(&current_time.tv_sec);
+		usecs = current_time.tv_usec;
+		strftime(time_chars, sizeof(time_chars), "%F %T", local_time);
+
+		//Nachricht zusammensetzen
+		sprintf(node_message, "%s:\t %s.%i\n", hostname, time_chars, usecs);
+		//Senden an den Master
+		MPI_Send(node_message, NODE_MESSAGE_BUFFER_SIZE, MPI_CHAR, MASTER_RANK, NODE_MESSAGE_TAG, MPI_COMM_WORLD);
 	}
-    }
-  else
-    {
-      //Generiere Prozessorname
-      char processor_name[MPI_MAX_PROCESSOR_NAME];
-      int namelen;
-      MPI_Get_processor_name(processor_name, &namelen);
-      
-      //Generiere Timestamp
-      time_t rawtime;
-      struct tm *time_info;
-      char time_buffer[80];
-      time(&rawtime);
-      time_info = localtime(&rawtime);
-      strftime(time_buffer, 30, "%x %X", time_info);
-      struct timeval exacttime;
-      gettimeofday(&exacttime, NULL);
-      usecs = (int) exacttime.tv_usec;
-      
-      //Generiere Outputstring
-      sprintf(outputstring, "%s: %s.%i", processor_name, time_buffer, usecs);
-      //sprintf(outputstring,"test");
-      
-      //Sende Outputstring an Prozess 0
-      MPI_Send(outputstring, 50, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
-    }
-  
-  MPI_Barrier(MPI_COMM_WORLD); //#######################################################
-  
-  //Druck der kleinsten usecs mit Reduce:
-  int min_usecs;
-  MPI_Reduce(&usecs, &min_usecs, world_size-1, MPI_INT, MPI_MIN, 0, MPI_COMM_WORLD);
-  if(world_rank == 0){printf("%i\n", min_usecs);}
-  
-  MPI_Barrier(MPI_COMM_WORLD); //#######################################################
-  
-  printf("Rang %i beendet jetzt!\n", world_rank);
-  
-  MPI_Finalize();
+
+  //Minimum von usec
+  MPI_Reduce(&usecs, &lowest_usecs, 1, MPI_LONG, MPI_MIN, MASTER_RANK, MPI_COMM_WORLD);
+
+  if(rank == MASTER_RANK) {
+    printf("Kleinste Millisekunden: %i\n", lowest_usecs);
+  }
+	//Auf alle Prozesse warten
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	printf("Rang %i beendet jetzt!\n", rank);
+
+	ierr = MPI_Finalize();
+
+	return ierr;
 }
