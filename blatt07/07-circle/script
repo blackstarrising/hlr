@@ -8,4 +8,4 @@
 . /etc/profile.d/wr-spack.sh
 spack load --dependencies mpi
 
-mpiexec ./circle 4
+mpiexec ./circle 5
