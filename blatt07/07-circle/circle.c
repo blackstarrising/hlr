@@ -7,34 +7,27 @@
 #define MESSAGE_BUFFER_SIZE 50
 
 int*
-init (int N, int Nlast, int last)
+init (int N, int Nmod, int rank)
 {
-	// TODO
-	int* buf = malloc(sizeof(int) * N);
+  int* buf = malloc(sizeof(int) * (N+1));
 
-	srand(time(NULL)*last);
+  srand(time(NULL)*(rank+1));
 
-	if((Nlast != 0) && (last == 1))
-	  {
-	    for (int i = 0; i < Nlast; i++)
-	      {
-		// Do not modify "% 25"
-		buf[i] = rand() % 25;
-	      }
-	    for (int i = Nlast; i < N; i++)
-	      {
-		buf[i] = -1;
-	      }
-	  }
-	else
-	  {
-	    for (int i = 0; i < N; i++)
-	      {
-		// Do not modify "% 25"
-		buf[i] = rand() % 25;
-	      }
-	  }
-	return buf;
+  for (int i = 0; i < N; i++)
+    {
+      // Do not modify "% 25"
+      buf[i] = rand() % 25;
+    }
+  
+  if((Nmod != 0) && (rank < Nmod))
+    {
+      buf[N] = rand() % 25;
+    }
+  else
+    {
+      buf[N] = -1;
+    }
+  return buf;
 }
 
 int*
@@ -74,21 +67,23 @@ main (int argc, char** argv)
   //total Array length
   Ntot = atoi(argv[1]);
 
-  int Nlast = Ntot % world_size;
+  int Nmod = Ntot % world_size;
   int N = Ntot/world_size;
   
-  buf = init(N, Nlast, world_size - rank);
+  buf = init(N, Nmod, rank);
 
   if(rank == 0){printf("\nBEFORE\n");}
   
   MPI_Barrier(MPI_COMM_WORLD); //#####################################################################
 
-  char message[MESSAGE_BUFFER_SIZE*N];
-  sprintf(message, "rank %d: %d\n", rank, buf[0]);
-  for (int i = 1; i < N; i++){
-    char buffer[MESSAGE_BUFFER_SIZE];
-    sprintf(buffer, "rank %d: %d\n", rank, buf[i]);
-    strcat(message, buffer);
+  char message[MESSAGE_BUFFER_SIZE*(N+1)];
+  if(!(N == 0 && rank >= Nmod)){sprintf(message, "rank %d: %d\n", rank, buf[0]);}
+  for (int i = 1; i == N; i++){
+    if(!(i == N && rank >= Nmod)){
+      char buffer[MESSAGE_BUFFER_SIZE];
+      sprintf(buffer, "rank %d: %d\n", rank, buf[i]);
+      strcat(message, buffer);
+    }
   }
   
   if(rank == 0)
@@ -98,13 +93,13 @@ main (int argc, char** argv)
       //Revieve and print others
       for(int i = 1; i < world_size; i++)
 	{
-	  MPI_Recv(message, MESSAGE_BUFFER_SIZE*N, MPI_CHAR, i, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  MPI_Recv(message, MESSAGE_BUFFER_SIZE*(N+1), MPI_CHAR, i, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	  printf("%s", message);
 	}
     }
   else
     {
-      MPI_Send(message, MESSAGE_BUFFER_SIZE*N, MPI_CHAR, 0, 1, MPI_COMM_WORLD);
+      MPI_Send(message, MESSAGE_BUFFER_SIZE*(N+1), MPI_CHAR, 0, 1, MPI_COMM_WORLD);
     }
 
   MPI_Barrier(MPI_COMM_WORLD); //#####################################################################
@@ -112,13 +107,16 @@ main (int argc, char** argv)
   circle(buf);
 
   MPI_Barrier(MPI_COMM_WORLD); //#####################################################################
-  
+
   if(rank == 0){printf("\nAFTER\n");}
-  sprintf(message, "rank %d: %d\n", rank, buf[0]);
-  for (int i = 1; i < N; i++){
-    char buffer[MESSAGE_BUFFER_SIZE];
-    sprintf(buffer, "rank %d: %d\n", rank, buf[i]);
-    strcat(message, buffer);
+  
+  if(!(N == 0 && rank >= Nmod)){sprintf(message, "rank %d: %d\n", rank, buf[0]);}
+  for (int i = 1; i == N; i++){
+    if(!(i == N && rank >= Nmod)){
+      char buffer[MESSAGE_BUFFER_SIZE];
+      sprintf(buffer, "rank %d: %d\n", rank, buf[i]);
+      strcat(message, buffer);
+    }
   }
   
   if(rank == 0)
@@ -128,14 +126,14 @@ main (int argc, char** argv)
       //Revieve and print others
       for(int i = 1; i < world_size; i++)
 	{
-	  MPI_Recv(message, MESSAGE_BUFFER_SIZE*N, MPI_CHAR, i, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  MPI_Recv(message, MESSAGE_BUFFER_SIZE*(N+1), MPI_CHAR, i, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	  printf("%s", message);
 	}
     }
   else
     {
-      MPI_Send(message, MESSAGE_BUFFER_SIZE*N, MPI_CHAR, 0, 1, MPI_COMM_WORLD);
-    }
+      MPI_Send(message, MESSAGE_BUFFER_SIZE*(N+1), MPI_CHAR, 0, 1, MPI_COMM_WORLD);
+    }  
 
   MPI_Barrier(MPI_COMM_WORLD); //#####################################################################
   MPI_Finalize();
