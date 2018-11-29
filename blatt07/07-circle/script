@@ -1,11 +1,11 @@
 #!/bin/bash
 
 #SBATCH --partition=west
-#SBATCH --nodes=4
-#SBATCH --ntasks=12
+#SBATCH --nodes=2
+#SBATCH --ntasks=3
 #SBATCH --output=out_circle.out
 . /etc/profile.d/modules.sh
 . /etc/profile.d/wr-spack.sh
 spack load --dependencies mpi
 
-mpiexec ./circle 5
+mpiexec ./circle 7

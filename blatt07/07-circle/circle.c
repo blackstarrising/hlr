@@ -80,6 +80,10 @@ circle (int* buf, int N, int rank, int world_size)
   return buf;
 }
 
+//Two different print versions!
+//Version 1: Each Process generates a String, sends it to 0 who prints it.
+//Pro: 0 never has all array numbers
+//Con: Char array send is not as great as just sending an int array.
 int
 printConsole (int* buf, int N, int rank, int world_size)
 {
@@ -97,7 +101,6 @@ printConsole (int* buf, int N, int rank, int world_size)
   }
 
   //All Processes send their output to process 0, process 0 prints all of them.
-  //This whole problem could also be solved by just sending all numbers together with the corresponding ranks and just printing that. will probably change that up.
   if(rank == 0)
     {
       //Print own
@@ -117,17 +120,42 @@ printConsole (int* buf, int N, int rank, int world_size)
   return EXIT_SUCCESS;
 }
 
+//Version 2: Each process just sends their buffer to 0, 0 prints them
+//Pro: shorter, no strange string appending required, easier send
+//Con: Process 0 has all numbers from the array (although not at the same time!)
+//Wr prefer version 2 but left version 1 in here if V2 is violating the rule to not have all numbers known to one process
+int
+printConsole2 (int* buf, int N, int rank, int world_size)
+{
+  int* bufp = malloc(sizeof(int) * (N+1));//Need another temp array to not overwrite buf (as it is used afterwards)
+  if(rank == 0)
+    {
+      //Print own
+      for (int i = 0; i <= N; i++)
+	{
+	  if(buf[i] != -1){printf("rank 0: %d\n",buf[i]);}
+	}
+      //Recieve and print others
+      for(int i = 1; i < world_size; i++)
+	{
+	  MPI_Recv(bufp, (N+1), MPI_INT, i, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  for (int j = 0; j <= N; j++)
+	    {
+	      if(bufp[j] != -1){printf("rank %d: %d\n", i, bufp[j]);}
+	    }
+	}
+    }
+  else
+    {
+      MPI_Send(buf, (N+1), MPI_INT, 0, 2, MPI_COMM_WORLD);
+    }
+  free(bufp);
+  return EXIT_SUCCESS;
+}
 
 int
 main (int argc, char** argv)
 {
-  if ((argc < 2))
-    {
-      printf("Arguments error!\nPlease specify a buffer size.\n");
-      return EXIT_FAILURE;
-    }
-  //TODO all other strange cases have to be excluded (N = 0, N smaller than 0 etc...)
-
   //Init
   MPI_Init(&argc, &argv);
   
@@ -135,13 +163,26 @@ main (int argc, char** argv)
   int rank;
   int* buf;
   int world_size;
-
+  
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-  
+
+  //TODO catch nun-number inputs
+  if ((argc < 2))
+    {
+      if(rank == 0){printf("Arguments error!\nPlease specify a valid buffer size.\n");}
+      return EXIT_FAILURE;
+    }
+
   //total Array length
   Ntot = atoi(argv[1]);
-
+  
+  if (Ntot < 1)
+    {
+      if(rank == 0){printf("Arguments error!\nPlease specify a buffer size > 0.\n");}
+      return EXIT_FAILURE;
+    }
+  
   int Nmod = Ntot % world_size;
   int N = Ntot/world_size;
   
@@ -150,22 +191,22 @@ main (int argc, char** argv)
   if(rank == 0){printf("\nBEFORE\n");}
   
   MPI_Barrier(MPI_COMM_WORLD); //#####################################################################
-
-  printConsole(buf, N, rank, world_size);
+  
+  printConsole2(buf, N, rank, world_size);
 
   MPI_Barrier(MPI_COMM_WORLD); //#####################################################################
   
   circle(buf, N, rank, world_size);
 
-  MPI_Barrier(MPI_COMM_WORLD); //#####################################################################
-
   if(rank == 0){printf("\nAFTER\n");}
-  
-  printConsole(buf, N, rank, world_size);
 
+  MPI_Barrier(MPI_COMM_WORLD); //#####################################################################
+  
+  printConsole2(buf, N, rank, world_size);
+  
   MPI_Barrier(MPI_COMM_WORLD); //#####################################################################
   MPI_Finalize();
-
+  
   free(buf);
   return EXIT_SUCCESS;
 }
