@@ -167,7 +167,6 @@ main (int argc, char** argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-  //TODO catch nun-number inputs
   if ((argc < 2))
     {
       if(rank == 0){printf("Arguments error!\nPlease specify a valid buffer size.\n");}
