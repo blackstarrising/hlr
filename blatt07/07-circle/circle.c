@@ -123,7 +123,7 @@ printConsole (int* buf, int N, int rank, int world_size)
 //Version 2: Each process just sends their buffer to 0, 0 prints them
 //Pro: shorter, no strange string appending required, easier send
 //Con: Process 0 has all numbers from the array (although not at the same time!)
-//Wr prefer version 2 but left version 1 in here if V2 is violating the rule to not have all numbers known to one process
+//We prefer version 2 but left version 1 in here if V2 is violating the rule to not have all numbers known to one process
 int
 printConsole2 (int* buf, int N, int rank, int world_size)
 {
