@@ -1,4 +1,4 @@
-#/****************************************************************************/
+/****************************************************************************/
 /****************************************************************************/
 /**                                                                        **/
 /**                 TU München - Institut für Informatik                   **/
@@ -18,6 +18,7 @@
 /* Include standard header file.                                            */
 /* ************************************************************************ */
 #define _POSIX_C_SOURCE 200809L
+#define TAG_PLACEHOLDER 1
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -136,11 +137,10 @@ allocateMatrices (struct calculation_arguments* arguments)
   // Anstatt einer (N+1)x(N+1) Matrix bekommt jeder Prozess zwar eine N+1 breite, aber nicht hohe Matrix. Die Höhe ist durch Nh (siehe InitVariables) gegeben
   arguments->M = allocateMemory(arguments->num_matrices * (N + 1) * (Nh + 2) * sizeof(double));
   arguments->Matrix = allocateMemory(arguments->num_matrices * sizeof(double**));
-  
+
   for (i = 0; i < arguments->num_matrices; i++)
     {
       arguments->Matrix[i] = allocateMemory((N + 1) * sizeof(double*));
-      
       for (j = 0; j < (Nh+2); j++)
 	{
 	  arguments->Matrix[i][j] = arguments->M + (i * (N + 1) * (Nh + 2)) + (j * (N + 1));
@@ -167,15 +167,18 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
   /* initialize matrix/matrices with zeros */
   for (g = 0; g < arguments->num_matrices; g++)
     {
-      for (i = 0; i <= N; i++)
+      for (i = 0; i < (Nh+2); i++)
 	{
-	  for (j = 0; j < (Nh+2); j++)
+	  for (j = 0; j <= N; j++)
 	    {
 	      Matrix[g][i][j] = 0.0;
 	    }
 	}
     }
-  
+
+  int offset = ((N-1)/world_size*rank);
+  if((N-1)%world_size <= rank){offset += (N-1)%world_size;}
+  else if(rank < (N-1)%world_size){offset += rank;}
   /* initialize borders, depending on function (function 2: nothing to do) */
   if (options->inf_func == FUNC_F0)
     {
@@ -184,15 +187,14 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 	  for (i = 0; i <= N; i++)// Setze die Oberste Zeile der obersten Prozesses (rank = 0) und die unterste des untersten (rank = world_size-1)
 	    {
 	      if(rank == 0){Matrix[g][0][i] = 1.0 - (h * i);}
-	      if(rank == world_size-1){Matrix[g][N][i] = h * i;}
+	      if(rank == world_size-1){Matrix[g][Nh+1][i] = h * i;}
 	    }
 	  for (i = 1; i <= Nh; i++)
 	    {
-	      Matrix[g][i][0] = 1.0 - (h * (i+Nh*rank));
-	      Matrix[g][i][N] = h * (i+Nh*rank);
+	      Matrix[g][i][0] = 1.0 - (h * (i+offset));
+	      Matrix[g][i][N] = h * (i+offset);
 	    }
-	  
-	  Matrix[g][N][0] = 0.0;
+	  Matrix[g][Nh+1][0] = 0.0;
 	  Matrix[g][0][N] = 0.0;
 	}
     }
@@ -312,15 +314,20 @@ calculateJacobiMPI (struct calculation_arguments const* arguments, struct calcul
   double residuum;                            /* residuum of current iteration */
   double maxresiduum;                         /* maximum residuum value of a slave in iteration */
   
+  uint64_t const rank = arguments->rank;
+  uint64_t const world_size = arguments->world_size;
+  int const Nh = arguments->Nh;
+  
   int const N = arguments->N;
   double const h = arguments->h;
-  
+    
   double pih = 0.0;
   double fpisin = 0.0;
   
   int term_iteration = options->term_iteration;
   
   /* initialize m1 and m2 depending on algorithm */
+  //Legacy, kann weg da sowieso je nach Methode ein anderes calculate (und andere Speicherstrukturen) verwendet werden.
   if (options->method == METH_JACOBI)
     {
       m1 = 0;
@@ -346,7 +353,7 @@ calculateJacobiMPI (struct calculation_arguments const* arguments, struct calcul
       maxresiduum = 0;
 
       /* over all rows */
-      for (i = 1; i < N; i++)
+      for (i = 1; i <= Nh; i++)
 	{
 	  double fpisin_i = 0.0;
 
@@ -382,8 +389,8 @@ calculateJacobiMPI (struct calculation_arguments const* arguments, struct calcul
       /* exchange m1 and m2 */
       i = m1;
       m1 = m2;
-      m2 = i;
-
+      m2 = i;      
+      
       /* check for stopping calculation depending on termination method */
       if (options->termination == TERM_PREC)
 	{
@@ -395,6 +402,34 @@ calculateJacobiMPI (struct calculation_arguments const* arguments, struct calcul
       else if (options->termination == TERM_ITER)
 	{
 	  term_iteration--;
+	}
+
+      //Communicate!!!
+
+      //Abbruchkriterium erreicht? -> Kommunikation Term_Precision
+
+      //Each Process:
+      //Recieve top border from above
+      //Send own first line to above
+      //Send own last line to below
+      //Recieve bottom border from below
+      //(Ausnahme: erster und letzter Prozess: erster nur nach unten kommunizieren, letzter nur nach oben!)
+      if(rank == 0)
+	{
+	  MPI_Send(Matrix_Out[Nh], N+1, MPI_DOUBLE, rank+1, TAG_PLACEHOLDER, MPI_COMM_WORLD);
+	  MPI_Recv(Matrix_Out[Nh+1], N+1, MPI_DOUBLE, rank+1, TAG_PLACEHOLDER, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	}
+      else if(rank == world_size-1)
+	{
+	  MPI_Recv(Matrix_Out[0], N+1, MPI_DOUBLE, rank-1, TAG_PLACEHOLDER, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  MPI_Send(Matrix_Out[1], N+1, MPI_DOUBLE, rank-1, TAG_PLACEHOLDER, MPI_COMM_WORLD);
+	}
+      else
+	{
+	  MPI_Recv(Matrix_Out[0], N+1, MPI_DOUBLE, rank-1, TAG_PLACEHOLDER, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  MPI_Send(Matrix_Out[1], N+1, MPI_DOUBLE, rank-1, TAG_PLACEHOLDER, MPI_COMM_WORLD);
+	  MPI_Send(Matrix_Out[Nh], N+1, MPI_DOUBLE, rank+1, TAG_PLACEHOLDER, MPI_COMM_WORLD);
+	  MPI_Recv(Matrix_Out[Nh+1], N+1, MPI_DOUBLE, rank+1, TAG_PLACEHOLDER, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	}
     }
 
@@ -543,10 +578,13 @@ main (int argc, char** argv)
 
   //Muss parallelisiert und die Speicdhervergabe muss angepasst werden
   allocateMatrices(&arguments);
+  printf("Survived alloc from rank %i\n", rank);
   initMatrices(&arguments, &options);
-  
+  printf("Survived Init from rank %i\n", rank);
+
   gettimeofday(&start_time, NULL);
-  calculate(&arguments, &results, &options);
+  if(world_size == 1){calculate(&arguments, &results, &options);}
+  else{calculateJacobiMPI(&arguments, &results, &options);}
   gettimeofday(&comp_time, NULL);
   
   displayStatistics(&arguments, &results, &options);
