@@ -1,4 +1,4 @@
-/****************************************************************************/
+#/****************************************************************************/
 /****************************************************************************/
 /**                                                                        **/
 /**                 TU München - Institut für Informatik                   **/
@@ -26,6 +26,7 @@
 #include <math.h>
 #include <malloc.h>
 #include <sys/time.h>
+#include <mpi.h>
 
 #include "partdiff.h"
 
@@ -277,6 +278,107 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 
 	results->m = m2;
 }
+/* ************************************************************************ */
+/* calculateJacobiMPI: solves the equation parallel using Jacobi            */
+/* ************************************************************************ */
+static
+void
+calculateJacobiMPI (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options)
+{
+  int i, j;                                   /* local variables for loops */
+  int m1, m2;                                 /* used as indices for old and new matrices */
+  double star;                                /* four times center value minus 4 neigh.b values */
+  double residuum;                            /* residuum of current iteration */
+  double maxresiduum;                         /* maximum residuum value of a slave in iteration */
+  
+  int const N = arguments->N;
+  double const h = arguments->h;
+  
+  double pih = 0.0;
+  double fpisin = 0.0;
+  
+  int term_iteration = options->term_iteration;
+  
+  /* initialize m1 and m2 depending on algorithm */
+  if (options->method == METH_JACOBI)
+    {
+      m1 = 0;
+      m2 = 1;
+    }
+  else
+    {
+      m1 = 0;
+      m2 = 0;
+    }
+
+  if (options->inf_func == FUNC_FPISIN)
+    {
+      pih = PI * h;
+      fpisin = 0.25 * TWO_PI_SQUARE * h * h;
+    }
+
+  while (term_iteration > 0)
+    {
+      double** Matrix_Out = arguments->Matrix[m1];
+      double** Matrix_In  = arguments->Matrix[m2];
+
+      maxresiduum = 0;
+
+      /* over all rows */
+      for (i = 1; i < N; i++)
+	{
+	  double fpisin_i = 0.0;
+
+	  if (options->inf_func == FUNC_FPISIN)
+	    {
+	      fpisin_i = fpisin * sin(pih * (double)i);
+	    }
+
+	  /* over all columns */
+	  for (j = 1; j < N; j++)
+	    {
+	      star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
+
+	      if (options->inf_func == FUNC_FPISIN)
+		{
+		  star += fpisin_i * sin(pih * (double)j);
+		}
+
+	      if (options->termination == TERM_PREC || term_iteration == 1)
+		{
+		  residuum = Matrix_In[i][j] - star;
+		  residuum = (residuum < 0) ? -residuum : residuum;
+		  maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
+		}
+
+	      Matrix_Out[i][j] = star;
+	    }
+	}
+
+      results->stat_iteration++;
+      results->stat_precision = maxresiduum;
+
+      /* exchange m1 and m2 */
+      i = m1;
+      m1 = m2;
+      m2 = i;
+
+      /* check for stopping calculation depending on termination method */
+      if (options->termination == TERM_PREC)
+	{
+	  if (maxresiduum < options->term_precision)
+	    {
+	      term_iteration = 0;
+	    }
+	}
+      else if (options->termination == TERM_ITER)
+	{
+	  term_iteration--;
+	}
+    }
+
+  results->m = m2;
+}
 
 /* ************************************************************************ */
 /*  displayStatistics: displays some statistics about the calculation       */
@@ -373,25 +475,68 @@ DisplayMatrix (struct calculation_arguments* arguments, struct calculation_resul
 int
 main (int argc, char** argv)
 {
-	struct options options;
-	struct calculation_arguments arguments;
-	struct calculation_results results;
+  MPI_Init(&argc, &argv);
+  int rank;
+  int world_size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+  
+  struct options options;
+  struct calculation_arguments arguments;
+  struct calculation_results results;
 
-	AskParams(&options, argc, argv);
+  //Brauch eigenen MPI_Struct um die Optionen weiterzugeben zu können!
+  MPI_Datatype MPI_Struct_options;
+  int structlen = 7;
+  int blocklengths[structlen];
+  MPI_Datatype types[structlen];
+  MPI_Aint displacements[structlen];
+  blocklengths[0] = 1; types[0] = MPI_UNSIGNED_LONG;
+  displacements[0] = offsetof(options_struct, number);
 
-	initVariables(&arguments, &results, &options);
+  blocklengths[1] = 1; types[1] = MPI_UNSIGNED_LONG;
+  displacements[1] = offsetof(options_struct, method);
 
-	allocateMatrices(&arguments);
-	initMatrices(&arguments, &options);
+  blocklengths[2] = 1; types[2] = MPI_UNSIGNED_LONG;
+  displacements[2] = offsetof(options_struct, interlines);
 
-	gettimeofday(&start_time, NULL);
-	calculate(&arguments, &results, &options);
-	gettimeofday(&comp_time, NULL);
+  blocklengths[3] = 1; types[3] = MPI_UNSIGNED_LONG;
+  displacements[3] = offsetof(options_struct, inf_func);
 
-	displayStatistics(&arguments, &results, &options);
-	DisplayMatrix(&arguments, &results, &options);
+  blocklengths[4] = 1; types[4] = MPI_UNSIGNED_LONG;
+  displacements[4] = offsetof(options_struct, termination);
 
-	freeMatrices(&arguments);
+  blocklengths[5] = 1; types[5] = MPI_UNSIGNED_LONG;
+  displacements[5] = offsetof(options_struct, term_iteration);
 
-	return 0;
+  blocklengths[6] = 1; types[6] = MPI_DOUBLE;
+  displacements[6] = offsetof(options_struct, term_precision);
+
+  MPI_Type_create_struct(structlen, blocklengths, displacements, types, &MPI_Struct_options);
+  MPI_Type_commit(&MPI_Struct_options);
+  
+  //Nur 0 askt nach params, teilt das dann mit den anderen:
+  if(rank == 0)
+    {
+      AskParams(&options, argc, argv);
+    }
+  MPI_Bcast(&options, 1, MPI_Struct, 0, MPI_COMM_WORLD);
+  
+  initVariables(&arguments, &results, &options);
+  
+  allocateMatrices(&arguments);
+  initMatrices(&arguments, &options);
+  
+  gettimeofday(&start_time, NULL);
+  calculate(&arguments, &results, &options);
+  gettimeofday(&comp_time, NULL);
+  
+  displayStatistics(&arguments, &results, &options);
+  DisplayMatrix(&arguments, &results, &options);
+  
+  freeMatrices(&arguments);
+
+  MPI_Finalize();
+  
+  return 0;
 }

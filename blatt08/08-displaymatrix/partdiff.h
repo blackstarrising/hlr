@@ -34,7 +34,7 @@
 #define TERM_PREC		1
 #define TERM_ITER		2
 
-struct options
+typedef struct options
 {
 	uint64_t number;         /* Number of threads                              */
 	uint64_t method;         /* Gauss Seidel or Jacobi method of iteration     */
@@ -43,7 +43,7 @@ struct options
 	uint64_t termination;    /* termination condition                          */
 	uint64_t term_iteration; /* terminate if iteration number reached          */
 	double   term_precision; /* terminate if precision reached                 */
-};
+} options_struct;
 
 /* *************************** */
 /* Some function declarations. */
