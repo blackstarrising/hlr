@@ -491,25 +491,18 @@ main (int argc, char** argv)
   int blocklengths[structlen];
   MPI_Datatype types[structlen];
   MPI_Aint displacements[structlen];
-  blocklengths[0] = 1; types[0] = MPI_UNSIGNED_LONG;
-  displacements[0] = offsetof(options_struct, number);
-
-  blocklengths[1] = 1; types[1] = MPI_UNSIGNED_LONG;
-  displacements[1] = offsetof(options_struct, method);
-
-  blocklengths[2] = 1; types[2] = MPI_UNSIGNED_LONG;
-  displacements[2] = offsetof(options_struct, interlines);
-
-  blocklengths[3] = 1; types[3] = MPI_UNSIGNED_LONG;
-  displacements[3] = offsetof(options_struct, inf_func);
-
-  blocklengths[4] = 1; types[4] = MPI_UNSIGNED_LONG;
-  displacements[4] = offsetof(options_struct, termination);
-
-  blocklengths[5] = 1; types[5] = MPI_UNSIGNED_LONG;
-  displacements[5] = offsetof(options_struct, term_iteration);
-
+  for(int i = 0; i < 6; i++)
+  {
+    blocklengths[i] = 1; types[i] = MPI_UNSIGNED_LONG;
+  }
   blocklengths[6] = 1; types[6] = MPI_DOUBLE;
+
+  displacements[0] = offsetof(options_struct, number);
+  displacements[1] = offsetof(options_struct, method);
+  displacements[2] = offsetof(options_struct, interlines);
+  displacements[3] = offsetof(options_struct, inf_func);
+  displacements[4] = offsetof(options_struct, termination);
+  displacements[5] = offsetof(options_struct, term_iteration);
   displacements[6] = offsetof(options_struct, term_precision);
 
   MPI_Type_create_struct(structlen, blocklengths, displacements, types, &MPI_Struct_options);
@@ -520,7 +513,7 @@ main (int argc, char** argv)
     {
       AskParams(&options, argc, argv);
     }
-  MPI_Bcast(&options, 1, MPI_Struct, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&options, 1, MPI_Struct_options, 0, MPI_COMM_WORLD);
   
   initVariables(&arguments, &results, &options);
   
