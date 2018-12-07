@@ -2,11 +2,11 @@
 
 #SBATCH --partition=west
 #SBATCH --nodes=1
-#SBATCH --ntasks=1
+#SBATCH --ntasks=12
 #SBATCH --output=out_partdiff.out
 #SBATCH --error=err_partdiff.err
 . /etc/profile.d/modules.sh
 . /etc/profile.d/wr-spack.sh
 spack load --dependencies mpi
 
-mpiexec ./partdiff 1 2 8 1 2 1000
+mpiexec ./partdiff 1 2 128 1 2 1000
