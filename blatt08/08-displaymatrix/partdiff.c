@@ -356,22 +356,23 @@ calculateJacobiMPI (struct calculation_arguments const* arguments, struct calcul
       double** Matrix_In  = arguments->Matrix[m2];
 
       maxresiduum = 0;
-
+#pragma omp parallel for collapse(2) private(i,j) shared(Matrix_In,Matrix_Out)
       /* over all rows */
-      for (i = 1; i <= Nh; i++)
+      for (i = 1; i < N; i++)
 	{
-	  double fpisin_i = 0.0;
-
-	  if (options->inf_func == FUNC_FPISIN)
-	    {
-	      fpisin_i = fpisin * sin(pih * (double)i);
-	    }
-
 	  /* over all columns */
 	  for (j = 1; j < N; j++)
 	    {
+	      //Die folgenden Zeilen wurden hier reinverschoben damit OMP collapse verwendet werden kann
+	      double fpisin_i = (j==1) ? 0.0 : fpisin_i;
+	      
+	      if (options->inf_func == FUNC_FPISIN)
+		{
+		  fpisin_i = fpisin * sin(pih * (double)i);
+		}
+	      
 	      star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
-
+	      
 	      if (options->inf_func == FUNC_FPISIN)
 		{
 		  star += fpisin_i * sin(pih * (double)j);
