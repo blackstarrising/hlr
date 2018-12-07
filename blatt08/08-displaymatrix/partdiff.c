@@ -18,7 +18,7 @@
 /* Include standard header file.                                            */
 /* ************************************************************************ */
 #define _POSIX_C_SOURCE 200809L
-#define TAG_PLACEHOLDER 1
+#define TAG_PLACEHOLDER 1 //If Tags are needed this can be used.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -134,7 +134,7 @@ allocateMatrices (struct calculation_arguments* arguments)
   uint64_t const N = arguments->N;
   uint64_t const Nh = arguments->Nh;
   
-  // Anstatt einer (N+1)x(N+1) Matrix bekommt jeder Prozess zwar eine N+1 breite, aber nicht hohe Matrix. Die Höhe ist durch Nh (siehe InitVariables) gegeben
+  // Anstatt einer (N+1)x(N+1) Matrix bekommt jeder Prozess zwar eine N+1 breite, aber nicht hohe Matrix. Die Höhe ist durch Nh + 2 (siehe InitVariables) gegeben
   arguments->M = allocateMemory(arguments->num_matrices * (N + 1) * (Nh + 2) * sizeof(double));
   arguments->Matrix = allocateMemory(arguments->num_matrices * sizeof(double**));
 
@@ -176,12 +176,13 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 	}
     }
 
-  int offset = ((N-1)/world_size*rank);
-  if((N-1)%world_size <= rank){offset += (N-1)%world_size;}
-  else if(rank < (N-1)%world_size){offset += rank;}
   /* initialize borders, depending on function (function 2: nothing to do) */
   if (options->inf_func == FUNC_F0)
     {
+      // Brauche Offset für die vertikalen Kanten, da diese nicht in einem gemeinsamen speicher liegen.
+      int offset = ((N-1)/world_size*rank);
+      if((N-1)%world_size <= rank){offset += (N-1)%world_size;}
+      else if(rank < (N-1)%world_size){offset += rank;}
       for (g = 0; g < arguments->num_matrices; g++)
 	{
 	  for (i = 0; i <= N; i++)// Setze die Oberste Zeile der obersten Prozesses (rank = 0) und die unterste des untersten (rank = world_size-1)
@@ -203,6 +204,7 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 /* ************************************************************************ */
 /* calculate: solves the equation                                           */
 /* ************************************************************************ */
+//Left the old function as required. Is also still used for one process.
 static
 void
 calculate (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options)
@@ -327,7 +329,7 @@ calculateJacobiMPI (struct calculation_arguments const* arguments, struct calcul
   int term_iteration = options->term_iteration;
   
   /* initialize m1 and m2 depending on algorithm */
-  //Legacy, kann weg da sowieso je nach Methode ein anderes calculate (und andere Speicherstrukturen) verwendet werden.
+  //Legacy, kann an sich weg da sowieso je nach Methode ein anderes calculate (und andere Speicherstrukturen) verwendet werden.
   if (options->method == METH_JACOBI)
     {
       m1 = 0;
@@ -394,6 +396,7 @@ calculateJacobiMPI (struct calculation_arguments const* arguments, struct calcul
       /* check for stopping calculation depending on termination method */
       if (options->termination == TERM_PREC)
 	{
+	  // Ein Prozess muss mit Reduce das gesamte MaxRedisuum berechnen und dann mit den anderen Teilen, ob abgebrochen werden muss
 	  double absolute_maxresiduum;
 	  MPI_Reduce(&maxresiduum, &absolute_maxresiduum, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 	  if ((absolute_maxresiduum < options->term_precision) && (rank == 0))
@@ -502,6 +505,7 @@ displayStatistics (struct calculation_arguments const* arguments, struct calcula
 static
 void
 DisplayMatrixLEGACY (struct calculation_arguments* arguments, struct calculation_results* results, struct options* options)
+//Alt, nur noch in der sequentiellen Variante genutzt.
 {
 	int x, y;
 
@@ -621,6 +625,13 @@ main (int argc, char** argv)
   struct calculation_arguments arguments;
   struct calculation_results results;
 
+  //Fange Gauß-Seidel mit mehr als einem Prozess ab, da noch nicht parallelisiert:
+  if (options.method == METH_GAUSS_SEIDEL && world_size > 1)
+    {
+      if (rank == 0){printf("Aborted: Please use only one Process for Gauß-Seidel Method!\n");}
+      return 1;
+    }
+  
   //Brauch eigenen MPI-Datentypen MPI_Struct_options um die Optionen weiterzugeben zu können!
   MPI_Datatype MPI_Struct_options;
   int structlen = 7;
@@ -655,25 +666,33 @@ main (int argc, char** argv)
   arguments.rank = rank;
   arguments.world_size = world_size;
   initVariables(&arguments, &results, &options);
-
+  
   //Muss parallelisiert und die Speicdhervergabe muss angepasst werden
   allocateMatrices(&arguments);
+  MPI_Barrier(MPI_COMM_WORLD);
   initMatrices(&arguments, &options);
 
+  //Für nur einen Prozess wird die alte calculate funktion genutzt.
+  MPI_Barrier(MPI_COMM_WORLD);
   gettimeofday(&start_time, NULL);
   if(world_size == 1){calculate(&arguments, &results, &options);}
   else{calculateJacobiMPI(&arguments, &results, &options);}
   gettimeofday(&comp_time, NULL);
+  MPI_Barrier(MPI_COMM_WORLD);
 
+  //Calculate from and to for printing. Very similar to offset used in initMatrices
   int N = arguments.N;
   int from = ((N-1)/world_size*rank) + 1;
   if((N-1)%world_size <= rank){from += (N-1)%world_size;}
   else if(rank < (N-1)%world_size){from += rank;}
   int to = from + arguments.Nh;
 
+  //Use old print for one process
   if(rank == 0){displayStatistics(&arguments, &results, &options);}
   if(world_size == 1){DisplayMatrixLEGACY(&arguments, &results, &options);}
   else{DisplayMatrix(&arguments, &results, &options, rank, world_size, from, to);}
+
+  MPI_Barrier(MPI_COMM_WORLD);
   
   freeMatrices(&arguments);
 
