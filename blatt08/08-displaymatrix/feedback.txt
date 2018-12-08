@@ -2,12 +2,15 @@ Die Bearbeitungszeit bitte in ganzen Stunden angeben (aufrunden).
 In den restlichen Zeilen jeweils ein X in der zutreffenden Spalte setzen.
 
 Bearbeitungszeit:  
-Schwierigkeit:     [ ] zu leicht         [ ] genau richtig     [ ] zu schwer
-Lehrreich:         [ ] wenig             [ ] etwas             [ ] sehr
-Verständlichkeit:  [ ] großteils unklar  [ ] teilweise unklar  [ ] verständlich
+Schwierigkeit:     [ ] zu leicht         [x] genau richtig     [x] zu schwer
+Lehrreich:         [ ] wenig             [ ] etwas             [x] sehr
+Verständlichkeit:  [ ] großteils unklar  [ ] teilweise unklar  [x] verständlich
 
 Kommentar:
 Zeitaufwand zu groß? Wo sind Sie nicht weiter gekommen?
+Der Zeitaufwand war ziemlich groß. Wir haben es deshalb nicht geschafft die OpenMP Parallelisierung vollständig zum Laufen zu bekommen.
 Was war zu schwer oder unverständlich?
 Was könnten wir verbessern?
+Hybride Parallelisierung erst in der Woche, in der der Zettel gemacht werden soll, in der Vorlesung erklären.
 Was hat Ihnen besonders gut gefallen?
+Konkretes, bekanntes Beispiel. Damit spart man sich die neue Einarbeitung in neuen Programmcode.
