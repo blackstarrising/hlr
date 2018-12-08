@@ -1,4 +1,0 @@
-#!/bin/bash
-
-OUTPUT=$(hostname)": "$(date +%s%N)
-echo $OUTPUT
