@@ -1,0 +1,65 @@
+calculate()
+
+//Daten sind aufgeteilt auf ca gleich große Zeilenböcke
+//Zwei Möglichkeiten: bereits implementierte (Aufteilung möglichst gleichmäßig) oder "letzter bekommt den Rest" -> Dies würde schneller sein, aber nur wenn nichtblockierendes send recieve für fertig genutzt werden.
+//Jeder Prozess kennt seine Zeilen sowie die Randzeilen unten zum Zeitpunkt vor seiner Rechnung.
+
+
+
+//Allgemein:
+//nter iterationsschritt
+Prüfe Iteration
+Recv(fertig? von oben)
+
+wenn fertig oder Iteration -> ENDE
+
+Revc(obere Zeile von oben aus n)
+Recv(maxresiduum von oben)
+
+
+Berechne oberste Zeile
+Send(oberste Zeile nach oben aus n)
+Berechne restliche zeilen
+
+Send(fertig? nach unten)
+Send(unterste Zeile nach unten aus n)
+Recv(untere Zeile von unten aus n-1)
+Send(maxresiduum nach unten)
+
+
+//Prozess 0:
+Prüfe Iteration
+
+check abruch iteration
+recv(Abbruch von last) //Kann nicht-blockierend sein
+
+Berechne Zeilen
+
+Send(unterste Zeile nach unten aus n)
+Recv(untere Zeile von unten aus n-1)
+Send(maxresiduum nach unten)
+Send(fertig? nach unten)
+
+//letzter Prozess
+Prüfe Iteration
+Recv(fertig? von oben)
+
+wenn fertig oder Iteration -> ENDE
+
+Revc(obere Zeile von oben aus n)
+Recv(maxresiduum von oben)
+
+
+Berechne oberste Zeile
+Send(oberste Zeile nach oben aus n)
+Berechne restliche zeilen
+
+prüfe maxresiduum -> setze fertig
+
+Send (Abbruch an 0) //Kann nicht-blockierend sein!
+
+
+ENDE:
+Außer letzter: Send(fertig nach unten)
+ALle außer 0: Sende Zeilen an 0
+Prozess 0: Drucke Zeilen, empfange alle anderen Zeilen (LOOP)
