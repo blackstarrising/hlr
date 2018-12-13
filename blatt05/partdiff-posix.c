@@ -1,4 +1,4 @@
-#/****************************************************************************/
+/****************************************************************************/
 /****************************************************************************/
 /**                                                                        **/
 /**                 TU München - Institut für Informatik                   **/
@@ -18,7 +18,7 @@
 /* Include standard header file.                                            */
 /* ************************************************************************ */
 #define _POSIX_C_SOURCE 200809L
-
+#define NTHREADS 12
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -26,8 +26,7 @@
 #include <math.h>
 #include <malloc.h>
 #include <sys/time.h>
-#include <mpi.h>
-
+#include <pthread.h>
 #include "partdiff.h"
 
 struct calculation_arguments
@@ -46,6 +45,18 @@ struct calculation_results
 	double    stat_precision; /* actual precision of all slaves in iteration    */
 };
 
+// @EDIT Dieses Struct enthält alle relevanten Daten für den Thread
+struct step_params
+{
+	uint64_t 	threadid;
+	double		**input;
+	double		**output;
+	uint64_t 	pars_term_iter;
+	uint64_t 	pars_inf_func;
+	uint64_t 	pars_termination;
+
+};
+
 /* ************************************************************************ */
 /* Global variables                                                         */
 /* ************************************************************************ */
@@ -53,7 +64,20 @@ struct calculation_results
 /* time measurement variables */
 struct timeval start_time;       /* time when program started                      */
 struct timeval comp_time;        /* time when calculation completed                */
-
+// @EDIT Für unsere Thread-Funktion müssen wir einige zusätzliche globale
+// variablen definieren
+// @EDIT Anzahl Iterationen, die EIN thread machen muss:
+int num_iterations;
+// @EDIT: Da nicht alle Threads immer perfekt aufgeteilt werden können,
+// müssen einige evtl eine Iteration mehr machen:
+int num_rest;
+// @EDIT Anzahl Elemente pro Zeile:
+int num_elements;
+// @EDIT Das ist ein Array, wo jeder Thread das maximale residuum der von ihm
+// bearbeiteten Elemente hereinschreibt (damit sparen wir uns ein mutex):
+static double maxres[NTHREADS];
+double pih;
+double fpisin;
 
 /* ************************************************************************ */
 /* initVariables: Initializes some global variables                         */
@@ -177,6 +201,78 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 	}
 }
 
+
+void *
+calculate_step(void* pars)
+{
+	// @EDIT Zunächst legen wir einige Startparameter fest
+	struct step_params* mypars;
+	mypars = (struct step_params*) pars;
+	int my_id = mypars->threadid;
+	double** my_input = mypars->input;
+	double** my_output = mypars->output;
+	double my_res = 0.0;
+	double my_maxres = 0.0;
+	int start_i = ((my_id-1)*num_iterations)+1;
+	int start_j = 1;
+	int my_iter = num_iterations;
+	double star;
+	//@EDIT Definiere ob dieser Thread eine Iteration mehr machen muss
+	if(my_id <= num_rest)
+	{
+		my_iter += 1;
+		start_i += my_id -1;
+	}
+	else
+	{
+		start_i += num_rest;
+	}
+
+	// @EDIT Hier wird der Fall abgefangen, dass es mehr threads geben kann,
+	// als Elemente in der Zeile sind. Dann muss das i angepasst werden und
+	// j muss entsprechend erhöht werden.
+	while (num_elements < start_i)
+	{
+		start_i = start_i - num_elements;
+		start_j += 1;
+	}
+	// @EDIT Das ist nun die kopierte for-loop aus dem Sequenziellen Programm;
+	// natürlich sind einige Parameternamen angepasst worden.
+	for (int count = 0; count < my_iter; count++)
+	{
+		double fpisin_i = 0.0;
+
+		star = 0.25 * (my_input[start_i-1][start_j] + my_input[start_i][start_j-1] + my_input[start_i][start_j+1] + my_input[start_i+1][start_j]);
+
+		if (mypars->pars_inf_func == FUNC_FPISIN)
+		{
+			fpisin_i = fpisin * sin(pih * (double)start_i);
+			star += fpisin_i * sin(pih * (double)start_j);
+		}
+
+		if (mypars->pars_termination == TERM_PREC || mypars->pars_term_iter == 1)
+		{
+			my_res = my_input[start_i][start_j] - star;
+			my_res = (my_res < 0) ? -my_res : my_res;
+			my_maxres = (my_res < my_maxres) ? my_maxres : my_res;
+		}
+
+		my_output[start_i][start_j] = star;
+		// @EDIT Wenn dieses Element berechnet ist, geht der thread um eins weiter.
+	  // Falls wir am Ende einer Zeile angekommen sind, starten wir wieder bei 1
+		// und erhöhen j auch um 1.
+		start_i += 1;
+		if(start_i > num_elements)
+		{
+			start_i = 1;
+			start_j += 1;
+		}
+	}
+	// @EDIT Das maximale Residuum dieses threads wird in den entspechenden Teil
+	// des globalen maxres arrays geschrieben
+	maxres[my_id-1] = my_maxres;
+}
+
 /* ************************************************************************ */
 /* calculate: solves the equation                                           */
 /* ************************************************************************ */
@@ -184,17 +280,16 @@ static
 void
 calculate (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options)
 {
-	int i, j;                                   /* local variables for loops */
+	// @EDIT p brauchen wir später nur um die Matrizen zu tauschen.
+	int p;
 	int m1, m2;                                 /* used as indices for old and new matrices */
-	double star;                                /* four times center value minus 4 neigh.b values */
-	double residuum;                            /* residuum of current iteration */
-	double maxresiduum;                         /* maximum residuum value of a slave in iteration */
+	static double maxresiduum;                         /* maximum residuum value of a slave in iteration */
 
 	int const N = arguments->N;
 	double const h = arguments->h;
 
-	double pih = 0.0;
-	double fpisin = 0.0;
+	pih = 0.0;
+	fpisin = 0.0;
 
 	int term_iteration = options->term_iteration;
 
@@ -220,47 +315,60 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 	{
 		double** Matrix_Out = arguments->Matrix[m1];
 		double** Matrix_In  = arguments->Matrix[m2];
+		maxresiduum = 0.0;
+		// @EDIT Hier definieren wir unsere pthreads und erzeugen außerdem ein
+		// joinable Attribut.
+		pthread_t threads[NTHREADS];
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+   	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+		void* status;
+		// @EDIT In diesem Array sind die structs mit den Daten für die Threads
+		struct step_params data_array[NTHREADS];
 
-		maxresiduum = 0;
+		// @EDIT Sollten die Interlines nicht durch die Thread-Zahl teilbar sein,
+		// müssen später einige threads ein Element mehr als andere Threads
+		// ausrechnen
+		num_rest = ((N-1)*(N-1))%NTHREADS;
+		// @EDIT So viele Iterationen macht ein Thread (plus evtl eine mehr)
+		num_iterations = (((N-1)*(N-1))-num_rest)/NTHREADS;
+		num_elements = N-1;
 
-		/* over all rows */
-		for (i = 1; i < N; i++)
+		for (int k = 0; k < NTHREADS; k++)
 		{
-			double fpisin_i = 0.0;
+			// @EDIT Hier legen wir für jeden Struct die Daten für den Thread fest
+			(&data_array[k])->threadid = k+1;
+			(&data_array[k])->input = Matrix_In;
+			(&data_array[k])->output = Matrix_Out;
+			(&data_array[k])->pars_term_iter = term_iteration;
+			(&data_array[k])->pars_termination = options->termination;
+			(&data_array[k])->pars_inf_func = options->inf_func;
+			// @EDIT Nun erzeugen wir die Threads mit den Daten und rufen damit die
+			// Funktion "calculate_step" auf
+			pthread_create(&threads[k], &attr, calculate_step,(void *) &data_array[k]);
+		}
 
-			if (options->inf_func == FUNC_FPISIN)
-			{
-				fpisin_i = fpisin * sin(pih * (double)i);
-			}
-
-			/* over all columns */
-			for (j = 1; j < N; j++)
-			{
-				star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
-
-				if (options->inf_func == FUNC_FPISIN)
-				{
-					star += fpisin_i * sin(pih * (double)j);
-				}
-
-				if (options->termination == TERM_PREC || term_iteration == 1)
-				{
-					residuum = Matrix_In[i][j] - star;
-					residuum = (residuum < 0) ? -residuum : residuum;
-					maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
-				}
-
-				Matrix_Out[i][j] = star;
-			}
+		// @EDIT Jetzt wird das Attribut "zerstört" und die Threads werden wieder
+		// gejoined.
+		pthread_attr_destroy(&attr);
+ 	  for(int k = 0; k < NTHREADS; k++)
+		{
+			pthread_join(threads[k], &status);
+		}
+		// @EDIT Aus dem "maxres" Array wird nun noch das tatsächliche maximale
+		// Residuum ermittelt.
+		for (int l = 0; l < NTHREADS; l++)
+		{
+			maxresiduum = (maxres[l] > maxresiduum) ? maxres[l] : maxresiduum;
 		}
 
 		results->stat_iteration++;
 		results->stat_precision = maxresiduum;
 
 		/* exchange m1 and m2 */
-		i = m1;
+		p = m1;
 		m1 = m2;
-		m2 = i;
+		m2 = p;
 
 		/* check for stopping calculation depending on termination method */
 		if (options->termination == TERM_PREC)
@@ -276,108 +384,9 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 		}
 	}
 
+
+
 	results->m = m2;
-}
-/* ************************************************************************ */
-/* calculateJacobiMPI: solves the equation parallel using Jacobi            */
-/* ************************************************************************ */
-static
-void
-calculateJacobiMPI (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options)
-{
-  int i, j;                                   /* local variables for loops */
-  int m1, m2;                                 /* used as indices for old and new matrices */
-  double star;                                /* four times center value minus 4 neigh.b values */
-  double residuum;                            /* residuum of current iteration */
-  double maxresiduum;                         /* maximum residuum value of a slave in iteration */
-  
-  int const N = arguments->N;
-  double const h = arguments->h;
-  
-  double pih = 0.0;
-  double fpisin = 0.0;
-  
-  int term_iteration = options->term_iteration;
-  
-  /* initialize m1 and m2 depending on algorithm */
-  if (options->method == METH_JACOBI)
-    {
-      m1 = 0;
-      m2 = 1;
-    }
-  else
-    {
-      m1 = 0;
-      m2 = 0;
-    }
-
-  if (options->inf_func == FUNC_FPISIN)
-    {
-      pih = PI * h;
-      fpisin = 0.25 * TWO_PI_SQUARE * h * h;
-    }
-
-  while (term_iteration > 0)
-    {
-      double** Matrix_Out = arguments->Matrix[m1];
-      double** Matrix_In  = arguments->Matrix[m2];
-
-      maxresiduum = 0;
-
-      /* over all rows */
-      for (i = 1; i < N; i++)
-	{
-	  double fpisin_i = 0.0;
-
-	  if (options->inf_func == FUNC_FPISIN)
-	    {
-	      fpisin_i = fpisin * sin(pih * (double)i);
-	    }
-
-	  /* over all columns */
-	  for (j = 1; j < N; j++)
-	    {
-	      star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
-
-	      if (options->inf_func == FUNC_FPISIN)
-		{
-		  star += fpisin_i * sin(pih * (double)j);
-		}
-
-	      if (options->termination == TERM_PREC || term_iteration == 1)
-		{
-		  residuum = Matrix_In[i][j] - star;
-		  residuum = (residuum < 0) ? -residuum : residuum;
-		  maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
-		}
-
-	      Matrix_Out[i][j] = star;
-	    }
-	}
-
-      results->stat_iteration++;
-      results->stat_precision = maxresiduum;
-
-      /* exchange m1 and m2 */
-      i = m1;
-      m1 = m2;
-      m2 = i;
-
-      /* check for stopping calculation depending on termination method */
-      if (options->termination == TERM_PREC)
-	{
-	  if (maxresiduum < options->term_precision)
-	    {
-	      term_iteration = 0;
-	    }
-	}
-      else if (options->termination == TERM_ITER)
-	{
-	  term_iteration--;
-	}
-    }
-
-  results->m = m2;
 }
 
 /* ************************************************************************ */
@@ -475,61 +484,27 @@ DisplayMatrix (struct calculation_arguments* arguments, struct calculation_resul
 int
 main (int argc, char** argv)
 {
-  MPI_Init(&argc, &argv);
-  int rank;
-  int world_size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-  
-  struct options options;
-  struct calculation_arguments arguments;
-  struct calculation_results results;
+	struct options options;
+	struct calculation_arguments arguments;
+	struct calculation_results results;
 
-  //Brauch eigenen MPI_Struct um die Optionen weiterzugeben zu können!
-  MPI_Datatype MPI_Struct_options;
-  int structlen = 7;
-  int blocklengths[structlen];
-  MPI_Datatype types[structlen];
-  MPI_Aint displacements[structlen];
-  for(int i = 0; i < 6; i++)
-  {
-    blocklengths[i] = 1; types[i] = MPI_UNSIGNED_LONG;
-  }
-  blocklengths[6] = 1; types[6] = MPI_DOUBLE;
+	AskParams(&options, argc, argv);
 
-  displacements[0] = offsetof(options_struct, number);
-  displacements[1] = offsetof(options_struct, method);
-  displacements[2] = offsetof(options_struct, interlines);
-  displacements[3] = offsetof(options_struct, inf_func);
-  displacements[4] = offsetof(options_struct, termination);
-  displacements[5] = offsetof(options_struct, term_iteration);
-  displacements[6] = offsetof(options_struct, term_precision);
+	initVariables(&arguments, &results, &options);
 
-  MPI_Type_create_struct(structlen, blocklengths, displacements, types, &MPI_Struct_options);
-  MPI_Type_commit(&MPI_Struct_options);
-  
-  //Nur 0 askt nach params, teilt das dann mit den anderen:
-  if(rank == 0)
-    {
-      AskParams(&options, argc, argv);
-    }
-  MPI_Bcast(&options, 1, MPI_Struct_options, 0, MPI_COMM_WORLD);
-  
-  initVariables(&arguments, &results, &options);
-  
-  allocateMatrices(&arguments);
-  initMatrices(&arguments, &options);
-  
-  gettimeofday(&start_time, NULL);
-  calculate(&arguments, &results, &options);
-  gettimeofday(&comp_time, NULL);
-  
-  displayStatistics(&arguments, &results, &options);
-  DisplayMatrix(&arguments, &results, &options);
-  
-  freeMatrices(&arguments);
+	allocateMatrices(&arguments);
+	initMatrices(&arguments, &options);
 
-  MPI_Finalize();
-  
-  return 0;
+	gettimeofday(&start_time, NULL);
+	calculate(&arguments, &results, &options);
+	gettimeofday(&comp_time, NULL);
+
+	displayStatistics(&arguments, &results, &options);
+	DisplayMatrix(&arguments, &results, &options);
+
+	freeMatrices(&arguments);
+	// @EDIT Das soll man laut wiki am Ende der main machen ;)
+	pthread_exit(NULL);
+
+	return 0;
 }

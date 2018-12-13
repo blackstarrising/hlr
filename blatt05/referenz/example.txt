@@ -1,0 +1,43 @@
+ 
+/******************************************************************************
+* FILE: arrayloops.c
+* DESCRIPTION:
+*   Example code demonstrating decomposition of array processing by
+*   distributing loop iterations.  A global sum is maintained by a mutex
+*   variable.  
+* AUTHOR: Blaise Barney
+* LAST REVISED: 01/29/09
+******************************************************************************/
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define NTHREADS      4
+#define ARRAYSIZE   1000000
+#define ITERATIONS   ARRAYSIZE / NTHREADS
+
+double  sum=0.0, a[ARRAYSIZE];
+pthread_mutex_t sum_mutex;
+
+
+void *do_work(void *tid) 
+{
+  int i, start, *mytid, end;
+  double mysum=0.0;
+
+  /* Initialize my part of the global array and keep local sum */
+  mytid = (int *) tid;
+  start = (*mytid * ITERATIONS);
+  end = start + ITERATIONS;
+  printf ("Thread %d doing iterations %d to %d\n",*mytid,start,end-1); 
+  for (i=start; i < end ; i++) {
+    a[i] = i * 1.0;
+    mysum = mysum + a[i];
+    }
+
+  /* Lock the mutex and update the global sum, then exit */
+  pthread_mutex_lock (&sum_mutex);
+  sum = sum + mysum;
+  pthread_mutex_unlock (&sum_mutex);
+  pthread_exit(NULL);
+}

@@ -6,29 +6,23 @@ CFLAGS = -std=c11 -pedantic -Wall -Wextra -O3 -ggdb
 LFLAGS = $(CFLAGS)
 LIBS   = -lm
 
-TGTS = partdiff-par partdiff-par-hybrid
-OBJS1 = partdiff.o askparams.o
-OBJS2 = partdiff-hybrid.o askparams.o
+TGTS = partdiff
+OBJS = partdiff.o askparams.o
 
 # Targets ...
-all: partdiff-par partdiff-par-hybrid
+all: partdiff
 
-partdiff-par: $(OBJS1) Makefile
-	$(CC) $(LFLAGS) -o $@ $(OBJS1) $(LIBS)
+partdiff: $(OBJS) Makefile
+	$(CC) $(LFLAGS) -o $@ $(OBJS) $(LIBS)
 
-partdiff-par-hybrid: $(OBJS2) Makefile
-	$(CC) $(LFLAGS) -fopenmp -o $@ $(OBJS2) $(LIBS)
+partdiff.o: partdiff.c Makefile
 
-partdiff.o: partdiff.c
-	$(CC) -c $(CFLAGS) partdiff.c
+askparams.o: askparams.c Makefile
 
-partdiff-hybrid.o: partdiff.c
-	$(CC) -c $(CFLAGS) -fopenmp -o partdiff-hybrid.o partdiff.c
-
-askparams.o: askparams.c
-	$(CC) -c $(CFLAGS) askparams.c
+# Rule to create *.o from *.c
+%.o: %.c
+	$(CC) -c $(CFLAGS) $*.c
 
 clean:
-	$(RM) $(OBJS1)
-	$(RM) $(OBJS2)
+	$(RM) $(OBJS)
 	$(RM) $(TGTS)

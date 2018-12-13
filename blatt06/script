@@ -1,0 +1,13 @@
+#!/bin/bash
+
+#SBATCH --nodes=3
+#SBATCH --ntasks=10
+#SBATCH --partition=west
+#SBATCH --output=jobmpi.out
+#SBATCH --error=jobmpi.err
+
+. /etc/profile.d/modules.sh
+. /etc/profile.d/wr-spack.sh
+spack load --dependencies mpi
+
+mpiexec ./timempi2
