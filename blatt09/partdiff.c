@@ -73,8 +73,12 @@ initVariables (struct calculation_arguments* arguments, struct calculation_resul
 	results->stat_iteration = 0;
 	results->stat_precision = 0;
 
+	uint64_t N = arguments->N;
+	uint64_t rank = arguments->rank;
+	uint64_t world_size = arguments->world_size;
+	
 	uint64_t Nh_temp = (N-1)/world_size;
-	if(rank > ((N-1) % world_size)){Nh_temp++};
+	if(rank > ((N-1) % world_size)){Nh_temp++;};
 	arguments->Nh=Nh_temp;
 }
 
@@ -148,7 +152,7 @@ static
 void
 initMatrices (struct calculation_arguments* arguments, struct options const* options)
 {
-	uint64_t g, i, j;                                /*  local variables for loops   */
+  uint64_t g, i, j, ih;                                /*  local variables for loops   */
 
 	uint64_t const rank = arguments->rank;
 	uint64_t const world_size = arguments->world_size;
@@ -174,7 +178,7 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 	{
 	  int offset = ((N-1)/world_size*rank);
 	  if((N-1)%world_size <= rank){offset += (N-1)%world_size;}
-	  else if(rank < (N-1)%world_size{offset += rank;})
+	  else if(rank < (N-1)%world_size){offset += rank;}
 		for (g = 0; g < arguments->num_matrices; g++)
 		{
 			for (i = 0; i <= N; i++)
@@ -294,6 +298,265 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 	}
 
 	results->m = m2;
+}
+
+/* **************************************************************************** */
+/* calculateGaussSeidelMPI: solves the equation with Gauß-Seidel MPI-parallel   */
+/* **************************************************************************** */
+static
+void
+calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options)
+{
+  int i, j;                                   /* local variables for loops */
+  int m1 = 0;
+  int m2 = 0;                                 /* used as indices for old and new matrices */
+  double star;                                /* four times center value minus 4 neigh.b values */
+  double residuum;                            /* residuum of current iteration */
+  double maxresiduum;                         /* maximum residuum value of a slave in iteration */
+
+  //Variables for parallelisation:
+  short fertig = 0; //boolean to check finish status for precision
+    
+  uint64_t const rank = arguments->rank;
+  uint64_t const world_size = arguments->world_size;
+  uint64_t const Nh = arguments->Nh;
+  
+  int const N = arguments->N;
+  double const h = arguments->h;
+  
+  double pih = 0.0;
+  double fpisin = 0.0;
+  
+  int term_iteration = options->term_iteration;
+  
+  if (options->inf_func == FUNC_FPISIN)
+    {
+      pih = PI * h;
+      fpisin = 0.25 * TWO_PI_SQUARE * h * h;
+    }
+
+  if(rank == world_size-1){MPI_Send(&fertig, 1, MPI_SHORT, 0, 0, MPI_COMM_WORLD);}
+  
+  //TAGLIST
+  //fertig: 0
+  //Zeile von oben: 1
+  //Maxresiduum: 2
+  //Zeile von unten: 3
+  while (term_iteration > 0)
+    {
+      if(rank == 0){MPI_Recv(&fertig, 1, MPI_SHORT, world_size-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);}
+      else {MPI_Recv(&fertig, 1, MPI_SHORT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);}
+
+      if(fertig == 1){
+	if(rank != world_size - 1){MPI_Send(&fertig, 1, MPI_SHORT, rank + 1, 0, MPI_COMM_WORLD);}
+	break;
+      } // If the fertig is true, exit the while loop
+      
+      double** Matrix_Out = arguments->Matrix[m1];
+      double** Matrix_In  = arguments->Matrix[m2];
+      
+      maxresiduum = 0;
+
+      if (rank == 0) //################################################################################
+	{
+	  /* over all rows */
+	  for (i = 1; i < Nh; i++)
+	    {
+	      double fpisin_i = 0.0;
+	      
+	      if (options->inf_func == FUNC_FPISIN)
+		{
+		  fpisin_i = fpisin * sin(pih * (double)i);
+		}
+	      
+	      /* over all columns */
+	      for (j = 1; j < N; j++)
+		{
+		  star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
+		  
+		  if (options->inf_func == FUNC_FPISIN)
+		    {
+		      star += fpisin_i * sin(pih * (double)j);
+		    }
+		  
+		  if (options->termination == TERM_PREC || term_iteration == 1)
+		    {
+		      residuum = Matrix_In[i][j] - star;
+		      residuum = (residuum < 0) ? -residuum : residuum;
+		      maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
+		    }
+		  
+		  Matrix_Out[i][j] = star;
+		}
+	    }
+
+	  MPI_Send(&fertig, 1, MPI_SHORT, rank + 1, 0, MPI_COMM_WORLD);
+	  MPI_Send(Matrix_Out[Nh], N+1, MPI_DOUBLE, rank + 1, 1, MPI_COMM_WORLD);
+	  MPI_Send(&maxresiduum, 1, MPI_DOUBLE, rank + 1, 2, MPI_COMM_WORLD);
+	  MPI_Recv(Matrix_Out[Nh+1], N+1, MPI_DOUBLE, rank + 1, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	}
+      else if (rank == world_size - 1) //###############################################################
+	{
+	  MPI_Recv(Matrix_Out[0], N + 1, MPI_DOUBLE, rank-1, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  MPI_Recv(&maxresiduum, 1, MPI_DOUBLE, rank-1, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  
+	  //Only Calculate first row
+	  i = 1;
+	  double fpisin_i = 0.0;
+	  
+	  if (options->inf_func == FUNC_FPISIN)
+	    {
+	      fpisin_i = fpisin * sin(pih * (double)i);
+	    }
+	  
+	  /* over all columns */
+	  for (j = 1; j < N; j++)
+	    {
+	      star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
+	      
+	      if (options->inf_func == FUNC_FPISIN)
+		{
+		  star += fpisin_i * sin(pih * (double)j);
+		}
+	      
+	      if (options->termination == TERM_PREC || term_iteration == 1)
+		{
+		  residuum = Matrix_In[i][j] - star;
+		  residuum = (residuum < 0) ? -residuum : residuum;
+		  maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
+		}
+	      
+	      Matrix_Out[i][j] = star;
+	    }
+	  
+	  MPI_Send(Matrix_Out[1], N+1, MPI_DOUBLE, rank-1, 3, MPI_COMM_WORLD);
+	  
+	  //Iterate over rest of rows
+	  /* over all rows */
+	  for (i = 2; i < Nh; i++)
+	    {
+	      if (options->inf_func == FUNC_FPISIN)
+		{
+		  fpisin_i = fpisin * sin(pih * (double)i);
+		}
+	      
+	      /* over all columns */
+	      for (j = 1; j < N; j++)
+		{
+		  star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
+		  
+		  if (options->inf_func == FUNC_FPISIN)
+		    {
+		      star += fpisin_i * sin(pih * (double)j);
+		    }
+		  
+		  if (options->termination == TERM_PREC || term_iteration == 1)
+		    {
+		      residuum = Matrix_In[i][j] - star;
+		      residuum = (residuum < 0) ? -residuum : residuum;
+		      maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
+		    }
+		  
+		  Matrix_Out[i][j] = star;
+		}
+	    }
+	  
+	  results->stat_precision = maxresiduum;
+	  
+	  /* check for stopping calculation depending on termination method */
+	  if (options->termination == TERM_PREC)
+	    {
+	      if (maxresiduum < options->term_precision)
+		{
+		  term_iteration = 0;
+		  fertig = 1;
+		}
+	    }
+	  
+	  MPI_Send(&fertig, 1, MPI_SHORT, 0, 0, MPI_COMM_WORLD);
+	  
+	}
+      else //###########################################################################################
+	{
+	  MPI_Recv(Matrix_Out[0], N + 1, MPI_DOUBLE, rank-1, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  MPI_Recv(&maxresiduum, 1, MPI_DOUBLE, rank-1, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  
+	  //Only Calculate first row
+	  i = 1;
+	  double fpisin_i = 0.0;
+	  
+	  if (options->inf_func == FUNC_FPISIN)
+	    {
+	      fpisin_i = fpisin * sin(pih * (double)i);
+	    }
+	  
+	  /* over all columns */
+	  for (j = 1; j < N; j++)
+	    {
+	      star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
+	      
+	      if (options->inf_func == FUNC_FPISIN)
+		{
+		  star += fpisin_i * sin(pih * (double)j);
+		}
+	      
+	      if (options->termination == TERM_PREC || term_iteration == 1)
+		{
+		  residuum = Matrix_In[i][j] - star;
+		  residuum = (residuum < 0) ? -residuum : residuum;
+		  maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
+		}
+	      
+	      Matrix_Out[i][j] = star;
+	    }
+	  
+	  MPI_Send(Matrix_Out[1], N+1, MPI_DOUBLE, rank-1, 3, MPI_COMM_WORLD);
+	  
+	  //Iterate over rest of rows
+	  /* over all rows */
+	  for (i = 2; i < Nh; i++)
+	    {
+	      if (options->inf_func == FUNC_FPISIN)
+		{
+		  fpisin_i = fpisin * sin(pih * (double)i);
+		}
+	      
+	      /* over all columns */
+	      for (j = 1; j < N; j++)
+		{
+		  star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
+		  
+		  if (options->inf_func == FUNC_FPISIN)
+		    {
+		      star += fpisin_i * sin(pih * (double)j);
+		    }
+		  
+		  if (options->termination == TERM_PREC || term_iteration == 1)
+		    {
+		      residuum = Matrix_In[i][j] - star;
+		      residuum = (residuum < 0) ? -residuum : residuum;
+		      maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
+		    }
+		  
+		  Matrix_Out[i][j] = star;
+		}
+	    }
+	  
+	  MPI_Send(&fertig, 1, MPI_SHORT, rank + 1, 0, MPI_COMM_WORLD);
+	  MPI_Send(Matrix_Out[Nh], N+1, MPI_DOUBLE, rank + 1, 1, MPI_COMM_WORLD);
+	  MPI_Send(&maxresiduum, 1, MPI_DOUBLE, rank + 1, 2, MPI_COMM_WORLD);
+	  MPI_Recv(Matrix_Out[Nh+1], N+1, MPI_DOUBLE, rank + 1, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	} //####################################################################################################
+      
+      results->stat_iteration++;
+
+      if (options->termination == TERM_ITER)
+	{
+	  term_iteration--;
+	}
+    }
+  
+  results->m = m2;
 }
 
 /* ************************************************************************ */
@@ -481,12 +744,6 @@ main (int argc, char** argv)
   struct calculation_arguments arguments;
   struct calculation_results results;
 
-  if(options.method == METH_JACOBI && world_size > 1)
-    {
-      if(rank == 0){printf("Aborted: Please use only one process for Jacobi Method!");}
-      return 1;
-    }
-
   //Nur ein Prozess fragt optionen ab und teilt sie
   MPI_Datatype MPI_Struct_options;
   int structlen = 7;
@@ -516,6 +773,12 @@ main (int argc, char** argv)
     }
   MPI_Bcast(&options, 1, MPI_Struct_options, 0, MPI_COMM_WORLD);
 
+  if(options.method == METH_JACOBI && world_size > 1)
+    {
+      if(rank == 0){printf("Aborted: Please use only one process for Jacobi Method!");}
+      return 1;
+    }
+  
   arguments.rank = rank;
   arguments.world_size = world_size;
   initVariables(&arguments, &results, &options);
@@ -527,7 +790,7 @@ main (int argc, char** argv)
   MPI_Barrier(MPI_COMM_WORLD);
   gettimeofday(&start_time, NULL);
 
-  if(world_size = 1){calculate(&arguments, &results, &options);}
+  if(world_size == 1){calculate(&arguments, &results, &options);}
   else {calculateGaussSeidelMPI(&arguments, &results, &options);}
 
   gettimeofday(&comp_time, NULL);

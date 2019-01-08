@@ -1,8 +1,13 @@
 #!/bin/bash
 
 #SBATCH --partition=west
-#SBATCH -N 1
-#SBATCH -w west10
-#SBATCH --output=output.out
+#SBATCH --nodes=1
+#SBATCH --ntasks=12
+#SBATCH --output=output/output.out
+rm output/*
 
-srun partdiff 1 2 512 2 2 500 >> thread.out
+. /etc/profile.d/modules.sh
+. /etc/profile.d/wr-spack.sh
+spack load --dependencies mpi
+
+mpiexec ./partdiff 1 1 512 2 2 500 >> output/thread.out
