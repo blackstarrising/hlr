@@ -335,8 +335,9 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
       fpisin = 0.25 * TWO_PI_SQUARE * h * h;
     }
 
-  if(rank == world_size-1){MPI_Send(&fertig, 1, MPI_SHORT, 0, 0, MPI_COMM_WORLD);}
-
+  //start calculation in process 1
+  //if(rank == world_size-1){MPI_Send(&fertig, 1, MPI_SHORT, 0, 0, MPI_COMM_WORLD);}
+  
   //TAGLIST
   //fertig: 0
   //Zeile von oben: 1
@@ -344,11 +345,15 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
   //Zeile von unten: 3
   while (term_iteration > 0)
     {
+      MPI_Bcast(&fertig, 1, MPI_SHORT, world_size-1, MPI_COMM_WORLD);
+      /*
       if(rank == 0){MPI_Recv(&fertig, 1, MPI_SHORT, world_size-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);}
       else {MPI_Recv(&fertig, 1, MPI_SHORT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);}
-
+      */
+      
       if(fertig == 1){
 	if(rank != world_size - 1){MPI_Send(&fertig, 1, MPI_SHORT, rank + 1, 0, MPI_COMM_WORLD);}
+	term_iteration = 0;
 	break;
       } // If the fertig is true, exit the while loop
       
@@ -360,7 +365,7 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
       if (rank == 0) //################################################################################
 	{
 	  /* over all rows */
-	  for (i = 1; i < Nh; i++)
+	  for (i = 1; i <= Nh; i++)
 	    {
 	      double fpisin_i = 0.0;
 	      
@@ -390,7 +395,7 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 		}
 	    }
 
-	  MPI_Send(&fertig, 1, MPI_SHORT, rank + 1, 0, MPI_COMM_WORLD);
+	  //MPI_Send(&fertig, 1, MPI_SHORT, rank + 1, 0, MPI_COMM_WORLD);
 	  MPI_Send(Matrix_Out[Nh], N+1, MPI_DOUBLE, rank + 1, 1, MPI_COMM_WORLD);
 	  MPI_Send(&maxresiduum, 1, MPI_DOUBLE, rank + 1, 2, MPI_COMM_WORLD);
 	  MPI_Recv(Matrix_Out[Nh+1], N+1, MPI_DOUBLE, rank + 1, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -433,7 +438,7 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 	  
 	  //Iterate over rest of rows
 	  /* over all rows */
-	  for (i = 2; i < Nh; i++)
+	  for (i = 2; i <= Nh; i++)
 	    {
 	      if (options->inf_func == FUNC_FPISIN)
 		{
@@ -461,7 +466,7 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 		}
 	    }
 	  
-	  results->stat_precision = maxresiduum;
+
 	  
 	  /* check for stopping calculation depending on termination method */
 	  if (options->termination == TERM_PREC)
@@ -473,14 +478,14 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 		}
 	    }
 	  
-	  MPI_Send(&fertig, 1, MPI_SHORT, 0, 0, MPI_COMM_WORLD);
+	  MPI_Bcast(&fertig, 1, MPI_SHORT, world_size-1, MPI_COMM_WORLD);
 	  
 	}
       else //###########################################################################################
 	{
 	  MPI_Recv(Matrix_Out[0], N + 1, MPI_DOUBLE, rank-1, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	  MPI_Recv(&maxresiduum, 1, MPI_DOUBLE, rank-1, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-	  
+
 	  //Only Calculate first row
 	  i = 1;
 	  double fpisin_i = 0.0;
@@ -514,7 +519,7 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 	  
 	  //Iterate over rest of rows
 	  /* over all rows */
-	  for (i = 2; i < Nh; i++)
+	  for (i = 2; i <= Nh; i++)
 	    {
 	      if (options->inf_func == FUNC_FPISIN)
 		{
@@ -541,8 +546,8 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 		  Matrix_Out[i][j] = star;
 		}
 	    }
-	  
-	  MPI_Send(&fertig, 1, MPI_SHORT, rank + 1, 0, MPI_COMM_WORLD);
+
+	  //MPI_Send(&fertig, 1, MPI_SHORT, rank + 1, 0, MPI_COMM_WORLD);
 	  MPI_Send(Matrix_Out[Nh], N+1, MPI_DOUBLE, rank + 1, 1, MPI_COMM_WORLD);
 	  MPI_Send(&maxresiduum, 1, MPI_DOUBLE, rank + 1, 2, MPI_COMM_WORLD);
 	  MPI_Recv(Matrix_Out[Nh+1], N+1, MPI_DOUBLE, rank + 1, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -550,6 +555,8 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
       
       results->stat_iteration++;
 
+      results->stat_precision = maxresiduum;
+      
       if (options->termination == TERM_ITER)
 	{
 	  term_iteration--;
@@ -802,7 +809,7 @@ main (int argc, char** argv)
   else if(rank < (N-1)%world_size){from += rank;}
   int to = from + arguments.Nh;
   
-  if(rank == 0){displayStatistics(&arguments, &results, &options);}
+  if(rank == world_size - 1){displayStatistics(&arguments, &results, &options);}
   if(world_size == 1){DisplayMatrixLEGACY(&arguments, &results, &options);}
   else{DisplayMatrix(&arguments, &results, &options, rank, world_size, from, to);}
 
