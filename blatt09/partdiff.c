@@ -347,11 +347,11 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
       if(rank == 0){MPI_Recv(&fertig, 1, MPI_SHORT, world_size-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);}
       else {MPI_Recv(&fertig, 1, MPI_SHORT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);}     
       
-      if(fertig == 1){
+      /*if(fertig == 1){
 	printf("Aborted die to reached precision limit");
 	term_iteration = 0;
 	break;
-      } // If the fertig is true, exit the while loop
+      }*/ // If the fertig is true, exit the while loop
 
       double** Matrix_u = arguments->Matrix[m1];
       
@@ -555,14 +555,18 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 	  term_iteration--;
 	}
 
-      printf("Ich bin %li und laufe zum %i ten mal durch\n", rank, results->stat_iteration);
+      //printf("Ich bin %li und laufe zum %i ten mal durch\n", rank, results->stat_iteration);
       
-      /*
+      
       if(fertig == 1){
-	printf("Aborted die to reached precision limit");
 	term_iteration = 0;
+	if(rank == world_size - 1 && options->termination == TERM_PREC){
+		for(uint64_t i = 0; i < world_size; i++){
+			MPI_Send(Matrix_u[1], N+1, MPI_DOUBLE, rank-1, 3, MPI_COMM_WORLD); //Sende erneut die oberste Zeile an den Vorgänger, damit Prozesse beendet werden.
+		}
+	}
 	break;
-	} */ // If the fertig is true, exit the while loop
+	} // If the fertig is true, exit the while loop
 
     }
   MPI_Bcast(&maxresiduum, 1, MPI_DOUBLE, world_size-1, MPI_COMM_WORLD);
