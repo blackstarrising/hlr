@@ -10,4 +10,4 @@ rm output/*
 . /etc/profile.d/wr-spack.sh
 spack load --dependencies mpi
 
-mpiexec ./partdiff 1 1 80 2 2 100 >> output/thread.out
+mpiexec ./partdiff 1 1 12 2 2 500 >> output/thread.out

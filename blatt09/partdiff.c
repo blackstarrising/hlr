@@ -352,13 +352,12 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
       */
       
       if(fertig == 1){
-	if(rank != world_size - 1){MPI_Send(&fertig, 1, MPI_SHORT, rank + 1, 0, MPI_COMM_WORLD);}
+	printf("Aborted die to reached precision limit");
 	term_iteration = 0;
 	break;
       } // If the fertig is true, exit the while loop
       
-      double** Matrix_Out = arguments->Matrix[m1];
-      double** Matrix_In  = arguments->Matrix[m2];
+      double** Matrix_u = arguments->Matrix[m1];
       
       maxresiduum = 0;
 
@@ -377,7 +376,7 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 	      /* over all columns */
 	      for (j = 1; j < N; j++)
 		{
-		  star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
+		  star = 0.25 * (Matrix_u[i-1][j] + Matrix_u[i][j-1] + Matrix_u[i][j+1] + Matrix_u[i+1][j]);
 		  
 		  if (options->inf_func == FUNC_FPISIN)
 		    {
@@ -386,23 +385,23 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 		  
 		  if (options->termination == TERM_PREC || term_iteration == 1)
 		    {
-		      residuum = Matrix_In[i][j] - star;
+		      residuum = Matrix_u[i][j] - star;
 		      residuum = (residuum < 0) ? -residuum : residuum;
 		      maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
 		    }
 		  
-		  Matrix_Out[i][j] = star;
+		  Matrix_u[i][j] = star;
 		}
 	    }
 
 	  //MPI_Send(&fertig, 1, MPI_SHORT, rank + 1, 0, MPI_COMM_WORLD);
-	  MPI_Send(Matrix_Out[Nh], N+1, MPI_DOUBLE, rank + 1, 1, MPI_COMM_WORLD);
+	  MPI_Send(Matrix_u[Nh], N+1, MPI_DOUBLE, rank + 1, 1, MPI_COMM_WORLD);
 	  MPI_Send(&maxresiduum, 1, MPI_DOUBLE, rank + 1, 2, MPI_COMM_WORLD);
-	  MPI_Recv(Matrix_Out[Nh+1], N+1, MPI_DOUBLE, rank + 1, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  MPI_Recv(Matrix_u[Nh+1], N+1, MPI_DOUBLE, rank + 1, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	}
       else if (rank == world_size - 1) //###############################################################
 	{
-	  MPI_Recv(Matrix_Out[0], N + 1, MPI_DOUBLE, rank-1, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  MPI_Recv(Matrix_u[0], N + 1, MPI_DOUBLE, rank-1, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	  MPI_Recv(&maxresiduum, 1, MPI_DOUBLE, rank-1, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	  
 	  //Only Calculate first row
@@ -417,7 +416,7 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 	  /* over all columns */
 	  for (j = 1; j < N; j++)
 	    {
-	      star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
+	      star = 0.25 * (Matrix_u[i-1][j] + Matrix_u[i][j-1] + Matrix_u[i][j+1] + Matrix_u[i+1][j]);
 	      
 	      if (options->inf_func == FUNC_FPISIN)
 		{
@@ -426,15 +425,15 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 	      
 	      if (options->termination == TERM_PREC || term_iteration == 1)
 		{
-		  residuum = Matrix_In[i][j] - star;
+		  residuum = Matrix_u[i][j] - star;
 		  residuum = (residuum < 0) ? -residuum : residuum;
 		  maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
 		}
 	      
-	      Matrix_Out[i][j] = star;
+	      Matrix_u[i][j] = star;
 	    }
 	  
-	  MPI_Send(Matrix_Out[1], N+1, MPI_DOUBLE, rank-1, 3, MPI_COMM_WORLD);
+	  MPI_Send(Matrix_u[1], N+1, MPI_DOUBLE, rank-1, 3, MPI_COMM_WORLD);
 	  
 	  //Iterate over rest of rows
 	  /* over all rows */
@@ -448,7 +447,7 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 	      /* over all columns */
 	      for (j = 1; j < N; j++)
 		{
-		  star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
+		  star = 0.25 * (Matrix_u[i-1][j] + Matrix_u[i][j-1] + Matrix_u[i][j+1] + Matrix_u[i+1][j]);
 		  
 		  if (options->inf_func == FUNC_FPISIN)
 		    {
@@ -457,16 +456,14 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 		  
 		  if (options->termination == TERM_PREC || term_iteration == 1)
 		    {
-		      residuum = Matrix_In[i][j] - star;
+		      residuum = Matrix_u[i][j] - star;
 		      residuum = (residuum < 0) ? -residuum : residuum;
 		      maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
 		    }
 		  
-		  Matrix_Out[i][j] = star;
+		  Matrix_u[i][j] = star;
 		}
 	    }
-	  
-
 	  
 	  /* check for stopping calculation depending on termination method */
 	  if (options->termination == TERM_PREC)
@@ -477,13 +474,11 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 		  fertig = 1;
 		}
 	    }
-	  
-	  MPI_Bcast(&fertig, 1, MPI_SHORT, world_size-1, MPI_COMM_WORLD);
-	  
 	}
+      
       else //###########################################################################################
 	{
-	  MPI_Recv(Matrix_Out[0], N + 1, MPI_DOUBLE, rank-1, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  MPI_Recv(Matrix_u[0], N + 1, MPI_DOUBLE, rank-1, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	  MPI_Recv(&maxresiduum, 1, MPI_DOUBLE, rank-1, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 	  //Only Calculate first row
@@ -498,7 +493,7 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 	  /* over all columns */
 	  for (j = 1; j < N; j++)
 	    {
-	      star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
+	      star = 0.25 * (Matrix_u[i-1][j] + Matrix_u[i][j-1] + Matrix_u[i][j+1] + Matrix_u[i+1][j]);
 	      
 	      if (options->inf_func == FUNC_FPISIN)
 		{
@@ -507,15 +502,17 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 	      
 	      if (options->termination == TERM_PREC || term_iteration == 1)
 		{
-		  residuum = Matrix_In[i][j] - star;
+		  residuum = Matrix_u[i][j] - star;
 		  residuum = (residuum < 0) ? -residuum : residuum;
 		  maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
 		}
 	      
-	      Matrix_Out[i][j] = star;
+	      Matrix_u[i][j] = star;
 	    }
-	  
-	  MPI_Send(Matrix_Out[1], N+1, MPI_DOUBLE, rank-1, 3, MPI_COMM_WORLD);
+
+	  MPI_Send(Matrix_u[1], N+1, MPI_DOUBLE, rank-1, 3, MPI_COMM_WORLD);
+
+		  
 	  
 	  //Iterate over rest of rows
 	  /* over all rows */
@@ -529,7 +526,7 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 	      /* over all columns */
 	      for (j = 1; j < N; j++)
 		{
-		  star = 0.25 * (Matrix_In[i-1][j] + Matrix_In[i][j-1] + Matrix_In[i][j+1] + Matrix_In[i+1][j]);
+		  star = 0.25 * (Matrix_u[i-1][j] + Matrix_u[i][j-1] + Matrix_u[i][j+1] + Matrix_u[i+1][j]);
 		  
 		  if (options->inf_func == FUNC_FPISIN)
 		    {
@@ -538,30 +535,30 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 		  
 		  if (options->termination == TERM_PREC || term_iteration == 1)
 		    {
-		      residuum = Matrix_In[i][j] - star;
+		      residuum = Matrix_u[i][j] - star;
 		      residuum = (residuum < 0) ? -residuum : residuum;
 		      maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
 		    }
 		  
-		  Matrix_Out[i][j] = star;
+		  Matrix_u[i][j] = star;
 		}
 	    }
 
 	  //MPI_Send(&fertig, 1, MPI_SHORT, rank + 1, 0, MPI_COMM_WORLD);
-	  MPI_Send(Matrix_Out[Nh], N+1, MPI_DOUBLE, rank + 1, 1, MPI_COMM_WORLD);
+	  MPI_Send(Matrix_u[Nh], N+1, MPI_DOUBLE, rank + 1, 1, MPI_COMM_WORLD);
 	  MPI_Send(&maxresiduum, 1, MPI_DOUBLE, rank + 1, 2, MPI_COMM_WORLD);
-	  MPI_Recv(Matrix_Out[Nh+1], N+1, MPI_DOUBLE, rank + 1, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  MPI_Recv(Matrix_u[Nh+1], N+1, MPI_DOUBLE, rank + 1, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	} //####################################################################################################
       
       results->stat_iteration++;
 
-      results->stat_precision = maxresiduum;
-      
       if (options->termination == TERM_ITER)
 	{
 	  term_iteration--;
 	}
     }
+  MPI_Bcast(&maxresiduum, 1, MPI_DOUBLE, world_size-1, MPI_COMM_WORLD);
+  results->stat_precision = maxresiduum;
   
   results->m = m2;
 }
@@ -788,32 +785,36 @@ main (int argc, char** argv)
   
   arguments.rank = rank;
   arguments.world_size = world_size;
-  initVariables(&arguments, &results, &options);
-  
+  initVariables(&arguments, &results, &options);  
   allocateMatrices(&arguments);
-  MPI_Barrier(MPI_COMM_WORLD);
+  
+  MPI_Barrier(MPI_COMM_WORLD); //#####
+  
   initMatrices(&arguments, &options);
 
-  MPI_Barrier(MPI_COMM_WORLD);
-  gettimeofday(&start_time, NULL);
+  MPI_Barrier(MPI_COMM_WORLD); //#####
 
+  gettimeofday(&start_time, NULL);
   if(world_size == 1){calculate(&arguments, &results, &options);}
   else {calculateGaussSeidelMPI(&arguments, &results, &options);}
-
   gettimeofday(&comp_time, NULL);
-  MPI_Barrier(MPI_COMM_WORLD);
 
+  MPI_Barrier(MPI_COMM_WORLD); //#####
+
+  if(rank == 0){displayStatistics(&arguments, &results, &options);}
+
+  MPI_Barrier(MPI_COMM_WORLD); //#####
+ 
   int N = arguments.N;
   int from = ((N-1)/world_size*rank) + 1;
   if((N-1)%world_size <= rank){from += (N-1)%world_size;}
   else if(rank < (N-1)%world_size){from += rank;}
   int to = from + arguments.Nh;
   
-  if(rank == world_size - 1){displayStatistics(&arguments, &results, &options);}
   if(world_size == 1){DisplayMatrixLEGACY(&arguments, &results, &options);}
   else{DisplayMatrix(&arguments, &results, &options, rank, world_size, from, to);}
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(MPI_COMM_WORLD); //#####
   
   freeMatrices(&arguments);
 
