@@ -78,7 +78,7 @@ initVariables (struct calculation_arguments* arguments, struct calculation_resul
 	uint64_t world_size = arguments->world_size;
 
 	uint64_t Nh_temp = (N-1)/world_size;
-	if(rank < ((N-1) % world_size)){Nh_temp++;};
+	if(rank < ((N-1) % world_size)){Nh_temp++;}
 	arguments->Nh=Nh_temp;
 }
 
