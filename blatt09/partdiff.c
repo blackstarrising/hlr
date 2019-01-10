@@ -76,7 +76,7 @@ initVariables (struct calculation_arguments* arguments, struct calculation_resul
 	uint64_t N = arguments->N;
 	uint64_t rank = arguments->rank;
 	uint64_t world_size = arguments->world_size;
-	
+
 	uint64_t Nh_temp = (N-1)/world_size;
 	if(rank > ((N-1) % world_size)){Nh_temp++;};
 	arguments->Nh=Nh_temp;
@@ -307,7 +307,7 @@ static
 void
 calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options)
 {
-  int i, j;                                   /* local variables for loops */
+  uint64_t i, j;                                   /* local variables for loops */
   int m1 = 0;
   int m2 = 0;                                 /* used as indices for old and new matrices */
   double star;                                /* four times center value minus 4 neigh.b values */
@@ -316,19 +316,19 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 
   //Variables for parallelisation:
   short fertig = 0; //boolean to check finish status for precision
-    
+
   uint64_t const rank = arguments->rank;
   uint64_t const world_size = arguments->world_size;
   uint64_t const Nh = arguments->Nh;
-  
-  int const N = arguments->N;
+
+  uint64_t const N = arguments->N;
   double const h = arguments->h;
-  
+
   double pih = 0.0;
   double fpisin = 0.0;
-  
+
   int term_iteration = options->term_iteration;
-  
+
   if (options->inf_func == FUNC_FPISIN)
     {
       pih = PI * h;
@@ -336,7 +336,7 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
     }
 
   if(rank == world_size-1){MPI_Send(&fertig, 1, MPI_SHORT, 0, 0, MPI_COMM_WORLD);}
-  
+
   //TAGLIST
   //fertig: 0
   //Zeile von oben: 1
