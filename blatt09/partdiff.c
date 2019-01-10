@@ -78,7 +78,7 @@ initVariables (struct calculation_arguments* arguments, struct calculation_resul
 	uint64_t world_size = arguments->world_size;
 
 	uint64_t Nh_temp = (N-1)/world_size;
-	if(rank > ((N-1) % world_size)){Nh_temp++;};
+	if(rank < ((N-1) % world_size)){Nh_temp++;};
 	arguments->Nh=Nh_temp;
 }
 
@@ -401,7 +401,7 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 	}
       else if (rank == world_size - 1) //###############################################################
 	{
-	  MPI_Recv(Matrix_u[0], N + 1, MPI_DOUBLE, rank-1, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  MPI_Recv(Matrix_u[0], N+1, MPI_DOUBLE, rank-1, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	  MPI_Recv(&maxresiduum, 1, MPI_DOUBLE, rank-1, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	  
 	  //Only Calculate first row
