@@ -335,8 +335,7 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
       fpisin = 0.25 * TWO_PI_SQUARE * h * h;
     }
 
-  //start calculation in process 1
-  //if(rank == world_size-1){MPI_Send(&fertig, 1, MPI_SHORT, 0, 0, MPI_COMM_WORLD);}
+  if(rank == world_size-1){for(uint64_t i = 0; i < world_size; i++){MPI_Send(&fertig, 1, MPI_SHORT, 0, 0, MPI_COMM_WORLD);}}
   
   //TAGLIST
   //fertig: 0
@@ -345,11 +344,8 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
   //Zeile von unten: 3
   while (term_iteration > 0)
     {
-      MPI_Bcast(&fertig, 1, MPI_SHORT, world_size-1, MPI_COMM_WORLD);
-      /*
       if(rank == 0){MPI_Recv(&fertig, 1, MPI_SHORT, world_size-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);}
-      else {MPI_Recv(&fertig, 1, MPI_SHORT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);}
-      */
+      else {MPI_Recv(&fertig, 1, MPI_SHORT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);}     
       
       if(fertig == 1){
 	printf("Aborted die to reached precision limit");
