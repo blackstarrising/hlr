@@ -352,7 +352,7 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 	term_iteration = 0;
 	break;
       } // If the fertig is true, exit the while loop
-      
+
       double** Matrix_u = arguments->Matrix[m1];
       
       maxresiduum = 0;
@@ -390,7 +390,7 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 		}
 	    }
 
-	  //MPI_Send(&fertig, 1, MPI_SHORT, rank + 1, 0, MPI_COMM_WORLD);
+	  MPI_Send(&fertig, 1, MPI_SHORT, rank + 1, 0, MPI_COMM_WORLD);
 	  MPI_Send(Matrix_u[Nh], N+1, MPI_DOUBLE, rank + 1, 1, MPI_COMM_WORLD);
 	  MPI_Send(&maxresiduum, 1, MPI_DOUBLE, rank + 1, 2, MPI_COMM_WORLD);
 	  MPI_Recv(Matrix_u[Nh+1], N+1, MPI_DOUBLE, rank + 1, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -470,6 +470,8 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 		  fertig = 1;
 		}
 	    }
+
+	  MPI_Send(&fertig, 1, MPI_SHORT, 0, 0, MPI_COMM_WORLD);
 	}
       
       else //###########################################################################################
@@ -540,7 +542,7 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 		}
 	    }
 
-	  //MPI_Send(&fertig, 1, MPI_SHORT, rank + 1, 0, MPI_COMM_WORLD);
+	  MPI_Send(&fertig, 1, MPI_SHORT, rank + 1, 0, MPI_COMM_WORLD);
 	  MPI_Send(Matrix_u[Nh], N+1, MPI_DOUBLE, rank + 1, 1, MPI_COMM_WORLD);
 	  MPI_Send(&maxresiduum, 1, MPI_DOUBLE, rank + 1, 2, MPI_COMM_WORLD);
 	  MPI_Recv(Matrix_u[Nh+1], N+1, MPI_DOUBLE, rank + 1, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -552,6 +554,16 @@ calculateGaussSeidelMPI (struct calculation_arguments const* arguments, struct c
 	{
 	  term_iteration--;
 	}
+
+      printf("Ich bin %li und laufe zum %i ten mal durch\n", rank, results->stat_iteration);
+      
+      /*
+      if(fertig == 1){
+	printf("Aborted die to reached precision limit");
+	term_iteration = 0;
+	break;
+	} */ // If the fertig is true, exit the while loop
+
     }
   MPI_Bcast(&maxresiduum, 1, MPI_DOUBLE, world_size-1, MPI_COMM_WORLD);
   results->stat_precision = maxresiduum;
