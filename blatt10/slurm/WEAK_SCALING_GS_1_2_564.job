@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --time=02:00:00
+#SBATCH --time=05:00:00
 #SBATCH --partition=west
 #SBATCH --nodes=1 --tasks-per-node=2
 #SBATCH --error=WEAK_SCALING_GS_1_2_564.err --output=WEAK_SCALING_GS_1_2_564.out
@@ -9,6 +9,6 @@
 . /etc/profile.d/wr-spack.sh
 spack load --dependencies mpi
 
-mpiexec -n 2 ./partdiff-par 1 1 564 2 2 1000
-mpiexec -n 2 ./partdiff-par 1 1 564 2 2 1000
-mpiexec -n 2 ./partdiff-par 1 1 564 2 2 1000
+mpiexec -n 2 partdiff_par/partdiff 1 1 564 2 2 1000
+mpiexec -n 2 partdiff_par/partdiff 1 1 564 2 2 1000
+mpiexec -n 2 partdiff_par/partdiff 1 1 564 2 2 1000
