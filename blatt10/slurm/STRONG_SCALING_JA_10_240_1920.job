@@ -3,7 +3,7 @@
 #SBATCH --time=05:00:00
 #SBATCH --partition=west
 #SBATCH --nodes=10 --tasks-per-node=24
-#SBATCH --error=STRONG_SCALING_JA_10_240_1920.err --output=STRONG_SCALING_JA_10_240_1920.out
+#SBATCH --error=logs/STRONG_SCALING_JA_10_240_1920.err --output=logs/STRONG_SCALING_JA_10_240_1920.out
 
 . /etc/profile.d/modules.sh
 . /etc/profile.d/wr-spack.sh

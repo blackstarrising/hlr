@@ -108,7 +108,7 @@ while [ ${LINE_COUNT} -le ${CASE_COUNT} ]; do
 #SBATCH --time=${TIME}
 #SBATCH --partition=west
 #SBATCH --nodes=${NODE_COUNT} --tasks-per-node=${PPN_COUNT}
-#SBATCH --error=${JOB_SCRIPT_NAME}.err --output=${JOB_SCRIPT_NAME}.out
+#SBATCH --error=logs/${JOB_SCRIPT_NAME}.err --output=logs/${JOB_SCRIPT_NAME}.out
 
 . /etc/profile.d/modules.sh
 . /etc/profile.d/wr-spack.sh

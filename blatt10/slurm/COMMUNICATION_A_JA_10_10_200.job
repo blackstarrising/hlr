@@ -3,7 +3,7 @@
 #SBATCH --time=04:00:00
 #SBATCH --partition=west
 #SBATCH --nodes=10 --tasks-per-node=1
-#SBATCH --error=COMMUNICATION_A_JA_10_10_200.err --output=COMMUNICATION_A_JA_10_10_200.out
+#SBATCH --error=logs/COMMUNICATION_A_JA_10_10_200.err --output=logs/COMMUNICATION_A_JA_10_10_200.out
 
 . /etc/profile.d/modules.sh
 . /etc/profile.d/wr-spack.sh

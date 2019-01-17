@@ -3,7 +3,7 @@
 #SBATCH --time=05:00:00
 #SBATCH --partition=west
 #SBATCH --nodes=4 --tasks-per-node=6
-#SBATCH --error=WEAK_SCALING_JA_4_24_1960.err --output=WEAK_SCALING_JA_4_24_1960.out
+#SBATCH --error=logs/WEAK_SCALING_JA_4_24_1960.err --output=logs/WEAK_SCALING_JA_4_24_1960.out
 
 . /etc/profile.d/modules.sh
 . /etc/profile.d/wr-spack.sh
