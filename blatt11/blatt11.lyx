@@ -1,7 +1,9 @@
-#LyX 2.1 created this file. For more info see http://www.lyx.org/
-\lyxformat 474
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
 \begin_document
 \begin_header
+\save_transient_properties true
+\origin unavailable
 \textclass article
 \use_default_options true
 \maintain_unincluded_children false
@@ -9,16 +11,16 @@
 \language_package default
 \inputencoding auto
 \fontencoding global
-\font_roman default
-\font_sans default
-\font_typewriter default
-\font_math auto
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
 \font_default_family sfdefault
 \use_non_tex_fonts false
 \font_sc false
 \font_osf false
-\font_sf_scale 100
-\font_tt_scale 100
+\font_sf_scale 100 100
+\font_tt_scale 100 100
 \graphics default
 \default_output_format default
 \output_sync 0
@@ -88,7 +90,7 @@ Startphase
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Float figure
@@ -169,6 +171,10 @@ Startphase Jacobi-Verfahren
 
 \end_inset
 
+
+\end_layout
+
+\begin_layout Standard
 Die obigen Grafiken zeigen die Startphase des Jacobi-Programmes für die
  verschiedenen Prozess- und Knotenzahlen.
  Es sind mehrere Dinge gut zu erkennen: Das Programm beginnt nach dem MPI_Init
@@ -183,13 +189,13 @@ ces genauer.
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
@@ -223,7 +229,7 @@ status open
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
@@ -262,7 +268,53 @@ Jacobi-Verfahren, Beginnn von InitMatrices
 
 \end_layout
 
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Hier ist zu sehen, was zu Beginn des Programmes geschieht, so wird etwa
+ der 
+\begin_inset Quotes eld
+\end_inset
+
+options
+\begin_inset Quotes erd
+\end_inset
+
+ struct gebroadcastet und mithilfe von Barriers dafür gesorgt dass die Matritzen
+initialisierung nicht zu früh passiert.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
 \begin_layout Plain Layout
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename scorep_Jacobi_3_2/start_hinten.png
+	scale 60
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+3 Prozesse, 2 Knoten
+\end_layout
+
+\end_inset
+
 
 \end_layout
 
@@ -271,12 +323,256 @@ Jacobi-Verfahren, Beginnn von InitMatrices
 
 \end_layout
 
+\begin_layout Plain Layout
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename scorep_Jacobi_5_4/start_ende.png
+	scale 60
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+5 Prozesse, 4 Knoten
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Jacobi-Verfahren, Ende von InitMatrices
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In dem Bild 3 ist das Ende von InitMatrices gezeigt.
+ Man sieht wieder die Kommunikation einer Barrier, um den Start von calculateJac
+obiMPI zu synchronisieren.
+\end_layout
+
 \begin_layout Subsection
 Iteration
 \end_layout
 
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename scorep_Jacobi_3_2/iteration.png
+	scale 60
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+3 Prozesse, 2 Knoten
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename scorep_Jacobi_5_4/iteration.png
+	scale 60
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+5 Prozesse, 4 Knoten
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Jacobi-Verfahren, Kommunikation zwischen zwei Iterationen
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In der nächsten Grafik ist die Kommunikation zwischen zwei Iterationsschritten
+ zu sehen.
+ Man erkennt die Stufenartige Kommunikation von Thread 0 bis zum letzten
+ Thread, an jeder 
+\begin_inset Quotes eld
+\end_inset
+
+Stufe
+\begin_inset Quotes erd
+\end_inset
+
+ nach unten schließt sich eine Kommunikation nach oben an.
+ Dies entspricht genau dem implementierten Verhalten.
+\end_layout
+
+\begin_layout Standard
+Auch ist zu sehen, dass die einzelnen Threads etwas unterschiedlich schnell
+ an dem Ende der Iteration ankommen (etwa in der unteren Grafik Thread 2
+ als erstes) und diese Abweichungen durch die erzwungene Synchronisation
+ durch den Nachrichtenaustausch wieder entfernt wird.
+\end_layout
+
 \begin_layout Subsection
 Endphase
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename scorep_Jacobi_3_2/ende.png
+	scale 60
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+3 Prozesse, 2 Knoten
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename scorep_Jacobi_5_4/ende.png
+	scale 60
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+5 Prozesse, 4 Knoten
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Jacobi-Verfahren, Ende der Berechnung
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In Grafik 5 ist das Ende der Berechnung zu sehen.
+ Es passiert eine Abschließende Kommunikation in der Zeilen ausgetauscht
+ werden (MPI_Recv), anschließend gibt es eine Barrier, damit alle Prozesse
+ sicher auf dem gleichen Stand sind.
+ Im Anschluss an die Barrier erkennt man gut das Verhalten von der DisplayMatrix
+ Funktion: alle Prozesse schicken ihre Daten an Prozess 0, welcher sie jeweils
+ auf die Konsole druckt.
+ Abschließend wird dann mit freeMatrices das Programm beendet.
 \end_layout
 
 \begin_layout Section
@@ -287,12 +583,394 @@ Gauß-Seidel-Verfahren
 Startphase
 \end_layout
 
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename scorep_GaussSeidel_3_2/start_gesamt.png
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+3 Prozesse, 2 Knoten
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename scorep_GaussSeidel_5_4/start_gesamt.png
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+5 Prozesse, 4 Knoten
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Startphase Gauß-Seidel-Verfahren
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Grafik 6 zeigt die Startphase des Gauß-Seidel-Verfahrens.
+ Wieder ist die initiale Kommunikation durch Broadcast und Barrier zu sehen,
+ bevor dann initMatrices beginnt.
+ Nach Init Matrices sehen wir wieder eine Barrier, woraufhin dann die Rechnung
+ beginnt.
+ Anders als bei dem Jacobi-Verfahren beginnen hier nicht alle Prozesse direkt
+ zu rechnen (da sie ja die Zahlen der Prozesse über ihnen benötigen).
+ So gibt es hier eine Art 
+\begin_inset Quotes eld
+\end_inset
+
+Ramp
+\begin_inset Quotes erd
+\end_inset
+
+ bis alle Threads schließlich rechnen.
+\end_layout
+
 \begin_layout Subsection
 Iteration
 \end_layout
 
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename scorep_GaussSeidel_3_2/iteration.png
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+3 Prozesse, 2 Knoten
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename scorep_GaussSeidel_5_4/iteration.png
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+5 Prozesse, 4 Knoten
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Iterationsphase Gauß-Seidel-Verfahren
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In dieser Grafik sieht man einen Ausschnitt aus dem Iterationszeitraum des
+ Gauß-Seidel-Verfahrens.
+ Auffällig sind die langen Wartezeiten.
+ Analog zum Programmcode sieht man für jeden Prozess eine kurze Berechnung
+ (einer Zeile), dann eine Kommunikation nach oben, die Berechnung des Rests
+ und schließlich eine Kommunikation nach unten.
+ Außerdem ist gut die Nachricht vom letzten Prozess an den ersten Prozess
+ zu sehen.
+ Es fällt hier bereits ein offensichtlicher Nachteil gegenüber dem Jacobi-Verfah
+ren zu erkennen: es gibt hier sehr viele Wartezeiten.
+\end_layout
+
 \begin_layout Subsection
 Endphase
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename scorep_GaussSeidel_3_2/ende_gesamt.png
+	scale 60
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+3 Prozesse, 2 Knoten
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename scorep_GaussSeidel_5_4/ende_gesamt.png
+	scale 60
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+5 Prozesse, 4 Knoten
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Gauß-Seidel-Verfahren, Ende der Berechnung
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In Grafik 8 ist das Ende des Gauß-Seidel-Verfahren gezeigt.
+ Man sieht, wie die Prozesse nach und nach fertig mit ihren Berechnungen
+ werden.
+ Es wird dann noch ein Broadcast ausgeführt (um das maxresiduum auszutauschen)
+ und anschließend eine Barrier, um synchron in das Programmende hineinzugehen.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename scorep_GaussSeidel_3_2/ende_zoom.png
+	scale 60
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+3 Prozesse, 2 Knoten
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename scorep_GaussSeidel_5_4/ende_zoom.png
+	scale 60
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+5 Prozesse, 4 Knoten
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Gauß-Seidel-Verfahren, Zoom auf den Beginn von freeMatrices
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In der letzten Grafik ist eine genauere Betrachtung des Prozessendes möglich.
+ Man erkennt gut den letzten noch laufenden Thread (2 bzw.
+ 4) sowie die Barrier.
+ Anschließend ist die DisplayMatrices-Funktion zu sehen, welche gnz analog
+ zur Jacobi-Methode alle Daten an Prozess 0 sendet, welcher sie dann druckt.
+\end_layout
+
+\begin_layout Section
+Fazit
+\end_layout
+
+\begin_layout Standard
+Insgesamt ist zu erkennen, dass das Gauß-Seidel-Verfahren deutliche Nachteile
+ gegenüber dem Jacobi-Verfahren zeigt (zumindest in unserer Implementation).
+ Dies ist vor allem auf die vielen Wartezeiten während der Iterationszeit
+ zurückzuführen.
+ Auch ist das Jacobi-Verfahren im Start und Ende des Programmes schneller,
+ da diese aber jeweils nur einmal passieren fällt das nicht so ins Gewicht
+ wie die Leistungsunterschiede während der Iterationen.
 \end_layout
 
 \end_body
