@@ -1,13 +1,16 @@
 #!/bin/bash
 
 #SBATCH --partition=west
-#SBATCH --nodes=1
-#SBATCH --ntasks=12
+#SBATCH --nodes=4
+#SBATCH --ntasks=5
 #SBATCH --output=output/output.out
 rm output/*
 
 . /etc/profile.d/modules.sh
 . /etc/profile.d/wr-spack.sh
 spack load --dependencies mpi
+spack load -r scorep
 
-mpiexec ./partdiff 1 1 128 2 1 1e-7 >> output/thread.out
+SCOREP_ENABLE_TRACING=true
+
+mpiexec ./partdiff 1 1 512 1 2 20
